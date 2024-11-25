@@ -66,6 +66,40 @@ def get_qpc_H(op_list, Nsites, Nqpc,jcouple):
                                    op_list[site_j+1].dag()*op_list[site_j])
     return H 
 
+def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit):
+    # Combines the 1particle bassi of the QPC and the dot to get the full psi
+
+    # L_QPC: integer, length of qpc lattice
+    # Center_index: integer, indicates the lattice site where QPC is initialized
+    # Band_w: float, band width of the gaussian qave packet in the qpc
+    # Kinit: float, group velocity of the gaussian wave packet
+
+    # create the 1 particle basis and the coeficients for the initial state
+    str_list, basis_list = get_1p_basis(L_QPC)
+    # build the initial condition for the QPC
+    qpc_init = gen_gauss_init(Center_index, Band_w, L_QPC, k0=Kinit)
+
+    psi_qpc = [qpc_init[j]*basis_list[j] for j in range(0,len(qpc_init))]
+
+    # create the dot basis
+    dot_basis = [tensor(basis(2,0),basis(2,1)), tensor(basis(2,1),basis(2,0))]
+    # build the initial condition for the dot
+    dot_init = [0.0, 0.1]
+    psi_dot = [dot_basis[j]*dot_init[j] for j in range(0,len(dot_basis))]
+
+    # assume dot initial state completely independent from QPC init state so we can factorize the probas
+    full_basis = []
+    # combine them 
+    for i in range(0,len(basis_list)):
+        for j in range(0, len(dot_basis)):
+            full_basis.append(tensor([psi_qpc[i], psi_dot[j]]))
+
+    # state correspond to particle in qpc all the way to the left and particle on left dot
+    Psi0 = np.sum(full_basis)
+    Psi0 = Psi0.unit()   
+    
+    return Psi0, qpc_init
+
 # ---------------------------
 # MAIN 
 # ----------------------------
@@ -78,29 +112,12 @@ J = np.ones(L_qpc) # QPC hopping
 # where the interaction to the double dot is also located
 J[bond_index] = J_prime  
 
-# create the 1 particle basis and the coeficients for the initial state
-str_list, basis_list = get_1p_basis(L_qpc)
-# build the initial condition for the QPC
-qpc_init = gen_gauss_init(centered_at, band_width, L_qpc, k0=K0)
-
-psi_qpc = [qpc_init[j]*basis_list[j] for j in range(0,len(qpc_init))]
-
-# create the dot basis
-dot_basis = [tensor(basis(2,0),basis(2,1)), tensor(basis(2,1),basis(2,0))]
-# build the initial condition for the dotQ
-dot_init = [0.0, 0.1]
-psi_dot = [dot_basis[j]*dot_init[j] for j in range(0,len(dot_basis))]
-
-# assume dot initial state completely independent from QPC init state so we can factorize the probas
-full_basis = []
-# combine them 
-for i in range(0,len(basis_list)):
-    for j in range(0, len(dot_basis)):
-        full_basis.append(tensor([psi_qpc[i], psi_dot[j]]))
-      
-# state correspond to particle in qpc all the way to the left and particle on left dot
-psi0 = np.sum(full_basis)
-psi0 = psi0.unit()   
+# create the QPCxDot basis
+psi0, qpc_init = gen_QPC_dot_basis(L_qpc, centered_at, band_width, K0)
+# normalize       
+rho = ket2dm(psi0) # initial density matrix
+# create the fermion operator list
+c_list = [fdestroy(L,i) for i in range(0,L)]
 
 # normalize       
 rho = ket2dm(psi0) # initial density matrix
