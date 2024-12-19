@@ -28,14 +28,14 @@ data_route = "../data/sims/"
 L_qpc_list = [13]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [10] # maximum time
-tsteps_list = [200] # number of time steps
+tsteps_list = [300] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
-band_width_list = [0.1,0.8] # width of the gaussian wave packet
-K0_list = [1.0] # Initial velocity of the wavepacket
+band_width_list = [1.5] # width of the gaussian wave packet
+K0_list = [1.0,2.0] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.0, 0.1] # hopping between quantum dots 
-Omega_list = [0.3] # coupling between dot 1 and QPC
+t_list = [0.0] # hopping between quantum dots 
+Omega_list = [0.0] # coupling between dot 1 and QPC
 ddot0_list = ["second"] # initialized the dot in the "first" or "second" lattice site QPC is hooked up to the second site
 # this is just to get the number of params for the combinations later
 Nparams = 12
@@ -49,7 +49,7 @@ def gen_gauss_init(l0, sigma, Nsites, k0=0):
     # and initial velocity k0
 
     x = np.asarray(range(0,Nsites))
-    coefs = ((np.sqrt(np.pi)*sigma)**(-0.5))*np.exp(-0.5*(x-l0)**2/(sigma)**2 )*np.exp(1j*k0*(x-l0))
+    coefs = ((np.sqrt(np.pi)*sigma)**(-0.5))*np.exp(-0.5*(x-l0)**2/(sigma**2) )*np.exp(1j*k0*(x-l0))
     
     # normalize
     mag = np.dot(np.conjugate(coefs),coefs)
@@ -199,7 +199,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
                                                                       K0, J_prime, t, Omega,ddot)
 
     param_dict = {"L_qpc": L_qpc, "max_time": max_t,"tsteps": tsteps,"bond_index": bond_index, 
-                  "band_width": band_width,"g_velocity":K0, "J_prime":J_prime , "t": t, "Omega": Omega }
+                  "band_width": band_width,"k0":K0, "J_prime":J_prime , "t": t, "Omega": Omega }
 
     results_file = h5py.File(data_route+file_name,'w')
     # save parameters and maybe other meta data
