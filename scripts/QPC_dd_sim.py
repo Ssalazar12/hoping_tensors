@@ -25,17 +25,17 @@ data_route = "../data/sims/"
 
 # it is important to have them as lists
 
-L_qpc_list = [13]  # lenth of the QPC chain
+L_qpc_list = [17]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [10] # maximum time
-tsteps_list = [300] # number of time steps
+tsteps_list = [500] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
-band_width_list = [1.5] # width of the gaussian wave packet
-K0_list = [1.0,2.0] # Initial velocity of the wavepacket
+band_width_list = [0.1, 1.5 ,2.0] # width of the gaussian wave packet
+K0_list = [0.1, 0.5 ,1.0, 1.5 ,2.0] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.0] # hopping between quantum dots 
-Omega_list = [0.0] # coupling between dot 1 and QPC
+t_list = [0.0, 0.2, 0.6] # hopping between quantum dots 
+Omega_list = [0.1, 0.3 ,0.5, 0.7 ,1.0] # coupling between dot 1 and QPC
 ddot0_list = ["second"] # initialized the dot in the "first" or "second" lattice site QPC is hooked up to the second site
 # this is just to get the number of params for the combinations later
 Nparams = 12
@@ -148,16 +148,9 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 
     # create the QPCxDot basis
     psi0, qpc_init = gen_QPC_dot_basis(L_qpc, centered_at, band_width, K0,ddot)
-    # normalize       
-    rho = ket2dm(psi0) # initial density matrix
+
     # create the fermion operator list
     c_list = [fdestroy(L,i) for i in range(0,L)]
-
-    # normalize       
-    rho = ket2dm(psi0) # initial density matrix
-    # create the fermion operator list
-    c_list = [fdestroy(L,i) for i in range(0,L)]
-
 
     # create the hamiltonian start with qpc
     H_QC = get_qpc_H(c_list, L ,L_qpc,J)
@@ -171,13 +164,11 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 
     H = H_QC + Hdot  + Hint
 
-
     # get the operators needed for lindbladian 
     # hrtr we don't really want dephasing (gamma=0) but just put it there for now
     collapse_ops, expect_ops = create_lindblad_op(L, c_list, 0.0)
     # add the energy to also track it
     expect_ops.append(H)
-
 
     # solve the schroedinger equation
     times = np.linspace(0.0, max_t, tsteps)
