@@ -25,7 +25,7 @@ data_route = "../data/sims/"
 
 # it is important to have them as lists
 
-L_qpc_list = [13]  # lenth of the QPC chain
+L_qpc_list = [14]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [10] # maximum time
 tsteps_list = [300] # number of time steps
