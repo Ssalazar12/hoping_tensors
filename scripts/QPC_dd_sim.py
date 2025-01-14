@@ -25,17 +25,17 @@ data_route = "../data/sims/"
 
 # it is important to have them as lists
 
-L_qpc_list = [17]  # lenth of the QPC chain
+L_qpc_list = [13]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [10] # maximum time
-tsteps_list = [500] # number of time steps
+tsteps_list = [300] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
-band_width_list = [0.1, 1.5 ,2.0] # width of the gaussian wave packet
+band_width_list = [0.5, 1.0, 1.5 ,2.0, 2.5] # width of the gaussian wave packet
 K0_list = [0.1, 0.5 ,1.0, 1.5 ,2.0] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.0, 0.2, 0.6] # hopping between quantum dots 
-Omega_list = [0.1, 0.3 ,0.5, 0.7 ,1.0] # coupling between dot 1 and QPC
+t_list = [0.0, 0.2, 0.5 ,0.9] # hopping between quantum dots 
+Omega_list = [0.0, 0.1, 0.3 ,0.5, 0.7 ,1.0] # coupling between dot 1 and QPC
 ddot0_list = ["second"] # initialized the dot in the "first" or "second" lattice site QPC is hooked up to the second site
 # this is just to get the number of params for the combinations later
 Nparams = 12
@@ -173,9 +173,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     # solve the schroedinger equation
     times = np.linspace(0.0, max_t, tsteps)
     # solve for the operators
-    result = sesolve(H, psi0, times, e_ops=expect_ops)
-    # solve for the state (I know this is highly inefficient but it will do for now)
-    result_psi = sesolve(H, psi0, times)
+    result = sesolve(H, psi0, times, e_ops=expect_ops,options={"store_states": True})
 
     # calculate sum of occupations
     # exclude the sites at Lp/2 and Lp/2 +1 where the bond is located
@@ -190,7 +188,8 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
                                                                       K0, J_prime, t, Omega,ddot)
 
     param_dict = {"L_qpc": L_qpc, "max_time": max_t,"tsteps": tsteps,"bond_index": bond_index, 
-                  "band_width": band_width,"k0":K0, "J_prime":J_prime , "t": t, "Omega": Omega }
+                  "band_width": band_width,"k0":K0, "J_prime":J_prime , "t": t, "Omega": Omega,
+                  "ddot0":ddot, "centered_at":centered_at }
 
     results_file = h5py.File(data_route+file_name,'w')
     # save parameters and maybe other meta data
@@ -202,13 +201,18 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     grp.create_dataset("time", data=times)
     grp.create_dataset("d1_density", data=result.expect[-3])
     grp.create_dataset("d2_density", data=result.expect[-2])
-    grp.create_dataset("trajectories", data=result.expect[:-1])
+    grp.create_dataset("energy", data=result.expect[:-1])
     grp.create_dataset("QPC_last_site_density", data=result.expect[-4])
     grp.create_dataset("QPC_left_density", data=n_left)
     grp.create_dataset("QPC_right_density", data=n_right)
     grp.create_dataset("QPC_bond_density", data=n_bond)
-
+    grp.create_dataset("trajectories", data=result.expect[:-1])
+    
     results_file.close()
+    # now save the wavefunction
+    file_name = "psi_L{}_maxtim{}_bw{}_k{}_jp{}_t{}_om{}_dd0{}".format(L_qpc, max_t, band_width, 
+                                                                      K0, J_prime, t, Omega,ddot)
+    qsave(result.states, data_route+"wavefunctions/"+file_name)
 
 
 
