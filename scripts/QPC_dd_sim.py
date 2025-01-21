@@ -16,6 +16,10 @@ sys.path.insert(0, parent_path)
 # import our cusstom module
 from src.qutip_tools import *
 
+# Finds the time evolution of a QPC coupled to a double dot (dd) by exact 
+# diagonalization using qutip. The raw data is save as the trajectories and the
+# time evolution of the wavefunciton at the end. 
+
 # --------------------------------
 # PARAMETERS
 # --------------------------------
@@ -31,12 +35,12 @@ max_t_list = [9] # maximum time
 tsteps_list = [300] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
-band_width_list = [2.0] # [0.5, 1.0, 1.5 ,2.0, 2.5] # width of the gaussian wave packet
-K0_list = [1.0] #[0.1, 0.5 ,1.0, 1.5 ,2.0] # Initial velocity of the wavepacket
+band_width_list = [2.0] # [0.5, 2.0] # width of the gaussian wave packet
+K0_list = [np.pi/10]# [np.pi/10, np.pi/7, np.pi/5, np.pi/3, np.pi/2, 5*np.pi/4] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.5] # [0.0, 0.2, 0.5 ,0.9] # hopping between quantum dots 
-Omega_list = [0.3] #[0.0, 0.1, 0.3 ,0.5, 0.7 ,1.0] # coupling between dot 1 and QPC
-ddot0_list = ["second"] # initialized the dot in the "first" or "second" lattice site QPC is hooked up to the second site
+t_list = [0.2]# [0.0, 0.2, 0.5, 0.9]# hopping between quantum dots 
+Omega_list = [0.3] # [0.0, 0.1 , 0.3, 0.7]  # coupling between dot 1 and QPC
+ddot0_list = ["fixed"] # ["fixed", "second"] # # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
 # this is just to get the number of params for the combinations later
 Nparams = 12
 
@@ -56,6 +60,17 @@ def gen_gauss_init(l0, sigma, Nsites, k0=0):
     coefs = coefs/np.sqrt(mag)
     
     return coefs    
+
+def get_DD_init_for_fixed_k(k_prime):
+    # calculated the initial conditions of the DD such that, when the QPC hits the bond
+    # its state is the same as that of a DD initialized localized in the first site when 
+    # the QPC for that case hits the bond with an average momentum k0=pi/2
+    # k_prime: float. The momentum of the qpc particle
+     
+    alpha0 = np.cos( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
+    beta0 = - 1j*np.sin( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
+                        
+    return alpha0, beta0
 
 def get_qpc_H(op_list, Nsites, Nqpc,jcouple):
         # create the Hamiltonian for the QPC where Nsites includes the double dot
@@ -87,11 +102,15 @@ def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
 
     # create the dot basis
     dot_basis = [tensor(basis(2,0),basis(2,1)), tensor(basis(2,1),basis(2,0))]
+    
     # build the initial condition for the dot
     if DD0 == "first": 
         dot_init = [1.0, 0.0]
     elif DD0 == "second": 
         dot_init = [0.0, 1.0]
+    elif DD0 == "fixed":
+        a0, b0 = get_DD_init_for_fixed_k(Kinit)
+        dot_init = [a0,b0]
     else:
         print("Invalid initial condition for the double dot")
 
@@ -184,7 +203,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     n_bond = result.expect[int(bond_index)] + result.expect[bond_index+1] 
 
     # save results to hdf5 file
-    file_name = "res_L{}_maxtim{}_bw{}_k{}_jp{}_t{}_om{}_dd0{}.hdf5".format(L_qpc, max_t, band_width, 
+    file_name = "res_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}.hdf5".format(L_qpc, max_t, band_width, 
                                                                       K0, J_prime, t, Omega,ddot)
 
     param_dict = {"L_qpc": L_qpc, "max_time": max_t,"tsteps": tsteps,"bond_index": bond_index, 
@@ -210,7 +229,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     
     results_file.close()
     # now save the wavefunction
-    file_name = "psi_L{}_maxtim{}_bw{}_k{}_jp{}_t{}_om{}_dd0{}".format(L_qpc, max_t, band_width, 
+    file_name = "psi_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}".format(L_qpc, max_t, band_width, 
                                                                       K0, J_prime, t, Omega,ddot)
     qsave(result.states, data_route+"wavefunctions/"+file_name)
 
