@@ -1,9 +1,11 @@
 import numpy as np
+from scipy import sparse
 from qutip import  *
 import os
 import sys
 import h5py
 import json
+
 from tqdm import tqdm
 
 
@@ -35,12 +37,12 @@ max_t_list = [9] # maximum time
 tsteps_list = [300] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
-band_width_list = [2.0] # [0.5, 2.0] # width of the gaussian wave packet
-K0_list = [np.pi/10]# [np.pi/10, np.pi/7, np.pi/5, np.pi/3, np.pi/2, 5*np.pi/4] # Initial velocity of the wavepacket
+band_width_list = [0.5, 2.0] # width of the gaussian wave packet
+K0_list = [np.pi/8 ,np.pi/6,np.pi/4 ,np.pi/2] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.2]# [0.0, 0.2, 0.5, 0.9]# hopping between quantum dots 
-Omega_list = [0.3] # [0.0, 0.1 , 0.3, 0.7]  # coupling between dot 1 and QPC
-ddot0_list = ["fixed"] # ["fixed", "second"] # # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
+t_list = [0.0, 0.2, 0.4, 0.9]# hopping between quantum dots 
+Omega_list = [0.0, 0.1, 0.3 ,0.5]  # coupling between dot 1 and QPC
+ddot0_list = ["second","fixed"] # # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
 # this is just to get the number of params for the combinations later
 Nparams = 12
 
@@ -128,6 +130,40 @@ def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
     
     return Psi0, qpc_init
 
+def get_partial_trace(Psi,NN):
+    # calcualtes the partial trace from a STATEVECTOR Psi
+    # NOT from the density matrix
+    # Psi: Quobject from Qutip representing the wavefunction
+    # NN: integer with the total size of the lattice
+
+    n = 2**(NN-2) # QPC sites
+    m = 2**2 # Double dot sites
+    # get density matrix as a sparse array
+    ps = sparse.csr_matrix(Psi.full())
+    A = sparse.kron(ps, np.conj(ps.T))
+    # convert to normal array for partial trace operation
+    Adense = A.toarray()
+    # trace out QPC sites and return reduced rho for DD as Quobject
+    return Qobj(np.trace(Adense.reshape(n,m,n,m), axis1=0, axis2=2))
+
+def get_entanglement(States, L ,tskip=5):
+    # calculates several entanglement measures
+    # States: list of Quobj containing the time evolution of the wavefunction
+    # tskip: tells how many in between times to skip for faster computation
+    purity_list = []
+    entropy_list = []
+    # skip some times otherwise its too heavy
+
+    state_arr = States[0::tskip]
+    for ti in range(0,len(state_arr)):
+        # DD reduced density matrix
+        rho_DD = get_partial_trace(state_arr[ti], L)
+        # purity
+        purity_list.append((rho_DD**2).tr())
+        entropy_list.append(entropy_vn(rho_DD, sparse=False))
+        
+    return purity_list, entropy_list, tskip
+
 # ---------------------------
 # MAIN 
 # ----------------------------
@@ -155,6 +191,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     ddot = parameter_array[11]
 
     print("calculating for: ")
+    print("")
     print("L_qpc=", L_qpc, "L=", L, "max_t=",max_t, "tsteps=",tsteps, "bond_index=",bond_index, "centered_at=", centered_at, 
         "band_width=",band_width,"K0=",K0,"J_prime=",J_prime,"t=", t, "Omega=", Omega, "dot init=",ddot)
     print("...")
@@ -202,13 +239,17 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     # occupation in the bond
     n_bond = result.expect[int(bond_index)] + result.expect[bond_index+1] 
 
+    # Calculate the entropy
+    time_skip = 10 
+    purity_list , entropy_list, tskip = get_entanglement(result.states, L_qpc+2 ,tskip=time_skip)
+
     # save results to hdf5 file
     file_name = "res_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}.hdf5".format(L_qpc, max_t, band_width, 
                                                                       K0, J_prime, t, Omega,ddot)
 
     param_dict = {"L_qpc": L_qpc, "max_time": max_t,"tsteps": tsteps,"bond_index": bond_index, 
                   "band_width": band_width,"k0":K0, "J_prime":J_prime , "t": t, "Omega": Omega,
-                  "ddot0":ddot, "centered_at":centered_at }
+                  "ddot0":ddot, "centered_at":centered_at, "entropy_t_skip": time_skip }
 
     results_file = h5py.File(data_route+file_name,'w')
     # save parameters and maybe other meta data
@@ -220,19 +261,21 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     grp.create_dataset("time", data=times)
     grp.create_dataset("d1_density", data=result.expect[-3])
     grp.create_dataset("d2_density", data=result.expect[-2])
-    grp.create_dataset("energy", data=result.expect[:-1])
-    grp.create_dataset("QPC_last_site_density", data=result.expect[-4])
+    grp.create_dataset("energy", data=result.expect[-1])
     grp.create_dataset("QPC_left_density", data=n_left)
     grp.create_dataset("QPC_right_density", data=n_right)
     grp.create_dataset("QPC_bond_density", data=n_bond)
-    grp.create_dataset("trajectories", data=result.expect[:-1])
+    grp.create_dataset("trajectories", data=result.expect[:-3])
+    grp.create_dataset("dot_purity", data=purity_list)
+    grp.create_dataset("dot_VN_entropy", data=entropy_list)
     
     results_file.close()
-    # now save the wavefunction
-    file_name = "psi_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}".format(L_qpc, max_t, band_width, 
-                                                                      K0, J_prime, t, Omega,ddot)
-    qsave(result.states, data_route+"wavefunctions/"+file_name)
 
+    """# now save the wavefunction
+                file_name = "psi_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}".format(L_qpc, max_t, band_width, 
+                                                                                  K0, J_prime, t, Omega,ddot)
+                qsave(result.states, data_route+"wavefunctions/"+file_name)
+            """
 
 
 

@@ -17,8 +17,7 @@ from qutip import  *
 # --------------------------------
 
 J=1
-data_route = "../data/sims/L=16/"
-wave_function_route = "../data/sims/L=16/wavefunctions/"
+data_route = "../data/sims/L=14/"
 
 # --------------------------------
 # Functions 
@@ -33,7 +32,6 @@ def load_data(dir_route, file):
         N_bond = res_h5["results/QPC_bond_density"][:]
         N_left = res_h5["results/QPC_left_density"][:]
         N_right = res_h5["results/QPC_right_density"][:]
-        N_last = res_h5["results/QPC_last_site_density"][:]
 
         # load dot data
         N_d1 = res_h5["results/d1_density"][:]
@@ -44,10 +42,14 @@ def load_data(dir_route, file):
         
         # trajectories
         Trajectories = res_h5["results/trajectories"][:]
+        
+        # entanglement
+        VN_entropy = res_h5["results/dot_VN_entropy"][:]
+        Purity = res_h5["results/dot_purity"][:]  
 
     res_h5.close()
     
-    return Param_dict,Times, N_bond, N_left, N_right, N_last, N_d1, N_d2,Trajectories
+    return Param_dict,Times, N_bond, N_left, N_right, N_d1, N_d2,Trajectories, VN_entropy, Purity
     
 
 def get_timescale_data(Param_dict, Traject, Times, N_bond):
@@ -55,7 +57,7 @@ def get_timescale_data(Param_dict, Traject, Times, N_bond):
     # including the time it takes to hit the different parts of the QPC
     J = 1
     
-    QPC_traject = Traject[0:-2,:] # we only care about qpc trajectories for now
+    QPC_traject = Traject[:,:] # we only care about qpc trajectories for now
     # vector holding distance to origin of each lattice site
     r_vect = np.arange(0,Param_dict["L_qpc"])
     # position average in time
@@ -72,7 +74,8 @@ def get_timescale_data(Param_dict, Traject, Times, N_bond):
     spline = UnivariateSpline(Times, N_bond-np.max(N_bond)/2, s=0)
     bond_root = spline.roots() # find the roots
     if (len(bond_root)<2):
-        print("not possible to estimate time at bond")
+        print("not possible to estimate time at bond for ")
+        print(Param_dict)
         tau_b = -Times[-1]
     else:
         # the first two roots yield the width at half maximum
@@ -128,23 +131,6 @@ def get_partial_trace(Psi,NN):
     # trace out QPC sites and return reduced rho for DD as Quobject
     return Qobj(np.trace(Adense.reshape(n,m,n,m), axis1=0, axis2=2))
 
-def get_entanglement(States, L ,tskip=5):
-    # calculates several entanglement measures
-    # States: list of Quobj containing the time evolution of the wavefunction
-    # tskip: tells how many in between times to skip for faster computation
-    purity_list = []
-    entropy_list = []
-    # skip some times otherwise its too heavy
-
-    state_arr = States[0::tskip]
-    for ti in range(0,len(state_arr)):
-        # DD reduced density matrix
-        rho_DD = get_partial_trace(state_arr[ti], L)
-        # purity
-        purity_list.append((rho_DD**2).tr())
-        entropy_list.append(entropy_vn(rho_DD, sparse=False))
-        
-    return purity_list, entropy_list, tskip
 
 # --------------------------------
 # MAIN 
@@ -155,29 +141,21 @@ data_dict = {'L_qpc': [],'max_time': [],'tsteps': [],'bond_index': [],
             "vg":[],'time_at_bond':[], "time_f_free":[], "time_f_int": [], 
             "xf_avg_free":[], "xf_avg_int":[], "Transmision_tot":[],"Transmission_k0":[],
             "r_density_free":[], "r_density_int":[], "last_density_free":[],"last_density_int":[],
-            "last_density_max":[], "time_last_density_max":[], "purity":[], "VN_entropy":[],
+            "last_density_max":[], "time_last_density_max":[], "min_purity":[], "max_VN_entropy":[],
             "entanglement_timeskip":[], "T_mean":[], "ddot0": []}
 
 file_list = os.listdir(data_route)
 file_list.remove('.DS_Store')
-file_list.remove('wavefunctions')
-
-
-wavefile_list = os.listdir(wave_function_route)
-# wavefile_list.remove('.DS_Store')
-
 
 for i in range(0,len(file_list)):
 
     file_ = file_list[i]
-    wavefile_ = wavefile_list[i]
-    wavefile_ = wavefile_.removesuffix('.qu')    # removes .qu suffix so qutip can load it
     
     if(i%1==0):
         print(file_)
     
     # Load observables
-    param_dict, times, n_bond, n_left, n_right, n_last, n_d1, n_d2, traject = load_data(data_route,file_)
+    param_dict, times, n_bond, n_left, n_right, n_d1, n_d2, traject,VN_entropy, purity = load_data(data_route,file_)
     
     # bw =3.0 causes problems sinces its super delocalized in space so skip
     if(param_dict["band_width"]==3.0):
@@ -190,13 +168,13 @@ for i in range(0,len(file_list)):
     time_f_i = find_nearest_index(times, tau_L)
     xf_avg_int = x_av[time_f_i]
     r_density_int = n_right[time_f_i]
-    last_density_int = n_last[time_f_i]
+    last_density_int = traject[-1][time_f_i]
 
     # find time index nearest to the hitting time in the free case
     time_f_i = find_nearest_index(times, tau_free)
     xf_avg_free = x_av[time_f_i]
     r_density_free = n_right[time_f_i]
-    last_density_free = n_last[time_f_i]
+    last_density_free = traject[-1][time_f_i]
 
     # get transmision probabilities from scattering analytics
     T0, T_tot = get_transmision_proba(param_dict, J)
@@ -207,15 +185,9 @@ for i in range(0,len(file_list)):
     T_mean = np.mean(n_right[start_time:])
 
     # get the maximum of the density in the last site and the time
-    n_max = n_last.max()
-    time_last_density_max = times[n_last.argmax()]
-    
-    # load wavefunctions
-    wavefunction_time = qload(wave_function_route+wavefile_)
-    
-    # calculate entanglement measures
-    purity, VN_entropy, tskip = get_entanglement(wavefunction_time,param_dict["L_qpc"]+2, tskip=10)
-    
+    n_max = traject[-1].max()
+    time_last_density_max = times[traject[-1].argmax()]
+
     data_dict["vg"].append(vg)
     data_dict["time_at_bond"].append(tau_b)
 
@@ -236,9 +208,9 @@ for i in range(0,len(file_list)):
     data_dict["last_density_max"].append(n_max)
     data_dict["time_last_density_max"].append(time_last_density_max)
     
-    data_dict["purity"].append(purity)
-    data_dict["VN_entropy"].append(VN_entropy)
-    data_dict["entanglement_timeskip"].append(tskip)
+    data_dict["min_purity"].append(min(purity))
+    data_dict["max_VN_entropy"].append(max(VN_entropy))
+    data_dict["entanglement_timeskip"].append(param_dict["entropy_t_skip"])
 
     data_dict["L_qpc"].append(param_dict["L_qpc"])
     data_dict["bond_index"].append(param_dict["bond_index"])
@@ -253,13 +225,6 @@ for i in range(0,len(file_list)):
 
 data_df = pd.DataFrame.from_dict(data_dict)
 
-if os.path.exists('../data/exp_pro/exploration_data_L={}.csv'.format(param_dict["L_qpc"])):
-    print("File exists. Adding data")
-    existing_df = pd.read_csv('../data/exp_pro/exploration_data_L={}.csv'.format(param_dict["L_qpc"]))
-    new_df = pd.concat([existing_df,data_df])
-    new_df.to_csv('../data/exp_pro/exploration_data_L={}.csv'.format(param_dict["L_qpc"]))
-else:
-    print("creating new df")
-    data_df.to_csv('../data/exp_pro/exploration_data_L={}.csv'.format(param_dict["L_qpc"]))
 
-
+print("creating new df")
+data_df.to_csv('../data/exp_pro/exploration_data_L={}.csv'.format(param_dict["L_qpc"]))
