@@ -38,10 +38,10 @@ tsteps_list = [300] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
 band_width_list = [0.5, 2.0] # width of the gaussian wave packet
-K0_list = [np.pi/8 ,np.pi/6,np.pi/4 ,np.pi/2] # Initial velocity of the wavepacket
+K0_list = [np.pi/8, np.pi/6,np.pi/4 ,np.pi/2] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
 t_list = [0.0, 0.2, 0.4, 0.9]# hopping between quantum dots 
-Omega_list = [0.0, 0.1, 0.3 ,0.5]  # coupling between dot 1 and QPC
+Omega_list = [0.0, 0.1, 0.3 ,0.5, 0.7]  # coupling between dot 1 and QPC
 ddot0_list = ["second","fixed"] # # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
 # this is just to get the number of params for the combinations later
 Nparams = 12
