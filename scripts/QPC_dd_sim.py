@@ -38,7 +38,7 @@ tsteps_list = [300] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
 band_width_list = [0.5, 2.0] # width of the gaussian wave packet
-K0_list = [np.pi/8, np.pi/6,np.pi/4 ,np.pi/2] # Initial velocity of the wavepacket
+K0_list = [np.pi/8, np.pi/6,np.pi/4, 5*np.pi/16, 6*np.pi/16, 7*np.pi/16 ,np.pi/2] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
 t_list = [0.0, 0.2, 0.4, 0.9]# hopping between quantum dots 
 Omega_list = [0.0, 0.1, 0.3 ,0.5, 0.7]  # coupling between dot 1 and QPC
@@ -152,17 +152,30 @@ def get_entanglement(States, L ,tskip=5):
     # tskip: tells how many in between times to skip for faster computation
     purity_list = []
     entropy_list = []
-    # skip some times otherwise its too heavy
+    corr_rho_list = []
+    theta_list = []
+    phi_list = []
 
+    # skip some times otherwise its too heavy
     state_arr = States[0::tskip]
     for ti in range(0,len(state_arr)):
         # DD reduced density matrix
         rho_DD = get_partial_trace(state_arr[ti], L)
+
+        # cut redundant degrees for blochsphere calculation
+        r = Qobj(rho_DD[1:-1,1:-1])
+        # mixed state bloch sphere representation. Check page 34 of my notes for this 
+        Sig_matrix = 2*r - identity(2)
+        theta_p = np.arccos(Sig_matrix[0,0])
+        phi_p = -np.arccos( 0.5*(Sig_matrix[1,0]+Sig_matrix[0,1])/np.sin(theta_p) )
+
         # purity
         purity_list.append((rho_DD**2).tr())
         entropy_list.append(entropy_vn(rho_DD, sparse=False))
+        theta_list.append(theta_p)
+        phi_list.append(phi_p)
         
-    return purity_list, entropy_list, tskip
+    return purity_list, entropy_list, theta_list, phi_list, tskip
 
 # ---------------------------
 # MAIN 
@@ -240,8 +253,8 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     n_bond = result.expect[int(bond_index)] + result.expect[bond_index+1] 
 
     # Calculate the entropy
-    time_skip = 10 
-    purity_list , entropy_list, tskip = get_entanglement(result.states, L_qpc+2 ,tskip=time_skip)
+    time_skip = 20 
+    purity_list , entropy_list, theta_list, phi_list, tskip = get_entanglement(result.states, L_qpc+2 ,tskip=time_skip)
 
     # save results to hdf5 file
     file_name = "res_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}.hdf5".format(L_qpc, max_t, band_width, 
@@ -268,6 +281,8 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     grp.create_dataset("trajectories", data=result.expect[:-3])
     grp.create_dataset("dot_purity", data=purity_list)
     grp.create_dataset("dot_VN_entropy", data=entropy_list)
+    grp.create_dataset("dot_bloch_theta", data=theta_list)
+    grp.create_dataset("dot_bloch_phi", data=phi_list)
     
     results_file.close()
 

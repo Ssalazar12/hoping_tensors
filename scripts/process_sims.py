@@ -141,11 +141,15 @@ data_dict = {'L_qpc': [],'max_time': [],'tsteps': [],'bond_index': [],
             "vg":[],'time_at_bond':[], "time_f_free":[], "time_f_int": [], 
             "xf_avg_free":[], "xf_avg_int":[], "Transmision_tot":[],"Transmission_k0":[],
             "r_density_free":[], "r_density_int":[], "last_density_free":[],"last_density_int":[],
-            "last_density_max":[], "time_last_density_max":[], "min_purity":[], "max_VN_entropy":[],
+            "last_density_max":[], "time_last_density_max":[],"bon":[] ,"min_purity":[], "max_VN_entropy":[],
             "entanglement_timeskip":[], "T_mean":[], "ddot0": []}
 
 file_list = os.listdir(data_route)
-file_list.remove('.DS_Store')
+
+try:
+    file_list.remove('.DS_Store')
+except:
+    pass
 
 for i in range(0,len(file_list)):
 
@@ -181,7 +185,7 @@ for i in range(0,len(file_list)):
     # average over the numerical transmision rate (n right) 
     # for the final times (time in tending to infinity)
     # find the index corresponding to t=6
-    start_time = find_nearest_index(times, 6.0)
+    start_time = find_nearest_index(times, 8)
     T_mean = np.mean(n_right[start_time:])
 
     # get the maximum of the density in the last site and the time
@@ -207,6 +211,7 @@ for i in range(0,len(file_list)):
 
     data_dict["last_density_max"].append(n_max)
     data_dict["time_last_density_max"].append(time_last_density_max)
+    data_dict["bond_density_max"].append(np.max(n_bond))
     
     data_dict["min_purity"].append(min(purity))
     data_dict["max_VN_entropy"].append(max(VN_entropy))
