@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.interpolate import UnivariateSpline
 from scipy.integrate import simpson
 from scipy import sparse
+from scipy.optimize import curve_fit
 
 import h5py
 import json
@@ -131,6 +132,9 @@ def get_partial_trace(Psi,NN):
     # trace out QPC sites and return reduced rho for DD as Quobject
     return Qobj(np.trace(Adense.reshape(n,m,n,m), axis1=0, axis2=2))
 
+def gaussian(x, A, Mu, Sig ):
+    return A * np.exp(-(x - Mu)**2 / (2 * Sig**2))
+
 
 # --------------------------------
 # MAIN 
@@ -138,11 +142,11 @@ def get_partial_trace(Psi,NN):
 
 data_dict = {'L_qpc': [],'max_time': [],'tsteps': [],'bond_index': [],
              'band_width': [],'k0': [],'J_prime': [],'t': [],'Omega': [],
-            "vg":[],'time_at_bond':[], "time_f_free":[], "time_f_int": [], 
+            "vg":[],'time_at_bond':[],"bond_fit_error":[] ,"time_f_free":[], "time_f_int": [], 
             "xf_avg_free":[], "xf_avg_int":[], "Transmision_tot":[],"Transmission_k0":[],
             "r_density_free":[], "r_density_int":[], "last_density_free":[],"last_density_int":[],
-            "last_density_max":[], "time_last_density_max":[],"bon":[] ,"min_purity":[], "max_VN_entropy":[],
-            "entanglement_timeskip":[], "T_mean":[], "ddot0": []}
+            "last_density_max":[], "time_last_density_max":[],"bond_density_max":[] ,"min_purity":[], "max_VN_entropy":[],
+            "entanglement_timeskip":[], "T_mean":[], "ddot0": [], "kick": []}
 
 file_list = os.listdir(data_route)
 
@@ -166,7 +170,16 @@ for i in range(0,len(file_list)):
         continue
 
     # calculate data for the time scales
-    tau_L, tau_free, tau_b, vg, x_av, bond_root  = get_timescale_data(param_dict, traject, times, n_bond)   
+    tau_L, tau_free, tau_b, vg, x_av, bond_root  = get_timescale_data(param_dict, traject, times, n_bond)
+
+    # to estimate the error of how good the time at bond estimation is do a gaussian fit
+
+    # As initial guess of the standard dev put FWHM
+    initial_guess = [1, np.mean(n_bond), tau_b] 
+    params, covariance = curve_fit(gaussian, times, n_bond, p0=initial_guess)
+    gauss_fit = gaussian(times, *params)
+    # we choose the error meassure as the maximum covariance error
+    gauss_error =  max(np.sqrt(np.diag(covariance)))   
     
     # find time index nearest to the hitting time with interaction
     time_f_i = find_nearest_index(times, tau_L)
@@ -191,6 +204,9 @@ for i in range(0,len(file_list)):
     # get the maximum of the density in the last site and the time
     n_max = traject[-1].max()
     time_last_density_max = times[traject[-1].argmax()]
+    # calcualte the "kick" 
+    kick = param_dict["Omega"]*simpson(n_bond, dx = times[1]- times[0])
+
 
     data_dict["vg"].append(vg)
     data_dict["time_at_bond"].append(tau_b)
@@ -211,6 +227,7 @@ for i in range(0,len(file_list)):
 
     data_dict["last_density_max"].append(n_max)
     data_dict["time_last_density_max"].append(time_last_density_max)
+    data_dict["bond_fit_error"].append(gauss_error)
     data_dict["bond_density_max"].append(np.max(n_bond))
     
     data_dict["min_purity"].append(min(purity))
@@ -227,6 +244,7 @@ for i in range(0,len(file_list)):
     data_dict["t"].append(param_dict["t"])
     data_dict["Omega"].append(param_dict["Omega"])
     data_dict["ddot0"].append(param_dict["ddot0"])
+    data_dict["kick"].append(kick)
 
 data_df = pd.DataFrame.from_dict(data_dict)
 
