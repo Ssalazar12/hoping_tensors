@@ -271,7 +271,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 
     # save the quantities that we are interested in 
     grp = results_file.create_group("results")
-    grp.create_dataset("time", data=times)
+    grp.create_dataset("time", data=times )
     grp.create_dataset("d1_density", data=result.expect[-3])
     grp.create_dataset("d2_density", data=result.expect[-2])
     grp.create_dataset("energy", data=result.expect[-1])
