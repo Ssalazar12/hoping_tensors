@@ -10,13 +10,9 @@ from tqdm import tqdm
 
 
 # add path to project dir so we can include custom modules from src
-path = os.getcwd()
-parent_path = os.path.abspath(os.path.join(path, os.pardir))
-
-sys.path.insert(0, parent_path)
 
 # import our cusstom module
-from src.qutip_tools import *
+from qutip_tools import *
 
 # Finds the time evolution of a QPC coupled to a double dot (dd) by exact 
 # diagonalization using qutip. The raw data is save as the trajectories and the
@@ -27,22 +23,22 @@ from src.qutip_tools import *
 # --------------------------------
 
 # location where the raw data is saved
-data_route = "../data/sims/"
-
+# data_route = "../data/sims/L=20/"
+data_route = "/scratch/scc/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=20/"
 # it is important to have them as lists
 
-L_qpc_list = [14]  # lenth of the QPC chain
+L_qpc_list = [30]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [9] # maximum time
 tsteps_list = [300] # number of time steps
 bond_index_list = int(L_qpc_list[0]/2) # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
-band_width_list = [0.5, 2.0] # width of the gaussian wave packet
-K0_list = [np.pi/8, np.pi/6,np.pi/4, 5*np.pi/16, 6*np.pi/16, 7*np.pi/16 ,np.pi/2] # Initial velocity of the wavepacket
+band_width_list = [0.5] #[0.5, 2.0] # width of the gaussian wave packet
+K0_list = [np.pi/2] #[np.pi/8, np.pi/6,np.pi/4, 5*np.pi/16, 6*np.pi/16, 7*np.pi/16 ,np.pi/2] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.0, 0.2, 0.4, 0.9]# hopping between quantum dots 
-Omega_list = [0.0, 0.1, 0.3 ,0.5, 0.7]  # coupling between dot 1 and QPC
-ddot0_list = ["second","fixed"] # # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
+t_list = [0.2]#[0.0, 0.2, 0.4, 0.9]# hopping between quantum dots 
+Omega_list = [0.0] #[0.0, 0.1, 0.3 ,0.5, 0.7]  # coupling between dot 1 and QPC
+ddot0_list = ['fixed'] #["second","fixed"] # # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
 # this is just to get the number of params for the combinations later
 Nparams = 12
 
@@ -93,13 +89,12 @@ def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
     # Band_w: float, band width of the gaussian qave packet in the qpc
     # Kinit: float, group velocity of the gaussian wave packet
     # DD0: string, tells dot initial condition either "first" or "second"
-
+    
     # create the 1 particle basis and the coeficients for the initial state
     str_list, basis_list = get_1p_basis(L_QPC)
   
     # build the initial condition for the QPC
     qpc_init = gen_gauss_init(Center_index, Band_w, L_QPC, Kinit)
-
     psi_qpc = [qpc_init[j]*basis_list[j] for j in range(0,len(qpc_init))]
 
     # create the dot basis
@@ -217,7 +212,6 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 
     # create the QPCxDot basis
     psi0, qpc_init = gen_QPC_dot_basis(L_qpc, centered_at, band_width, K0,ddot)
-
     # create the fermion operator list
     c_list = [fdestroy(L,i) for i in range(0,L)]
 
