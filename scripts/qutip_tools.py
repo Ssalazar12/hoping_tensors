@@ -36,14 +36,20 @@ def get_1p_basis(Nsites):
     # list holding all possible 1-particle states
     string_list = []
     basis_list = []
+
+    # MAKE SURE EVERYTHING STAYS SPARSE
+    b1 = basis(2,0)
+    b1.data = data.to(data.CSR, b1.data)    
+    b2 = basis(2,1)
+    b2.data = data.to(data.CSR, b2.data)
     
     for site_j in range(0,Nsites):
         # create emty sites
-        site_vectors = [basis(2, 0)]*Nsites
+        site_vectors = [b1]*Nsites
         site_string = [0]*Nsites
         
         # create an exitation at site j
-        site_vectors[site_j] = basis(2, 1)
+        site_vectors[site_j] = b2
         site_string[site_j] = 1
         
         string_list.append(site_string)

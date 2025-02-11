@@ -23,8 +23,8 @@ from qutip_tools import *
 # --------------------------------
 
 # location where the raw data is saved
-# data_route = "../data/sims/L=20/"
-data_route = "/scratch/scc/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=20/"
+data_route = "../data/sims/L=20/"
+# data_route = "/scratch/scc/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=20/"
 # it is important to have them as lists
 
 L_qpc_list = [16]  # lenth of the QPC chain
@@ -97,8 +97,15 @@ def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
     qpc_init = gen_gauss_init(Center_index, Band_w, L_QPC, Kinit)
     psi_qpc = [qpc_init[j]*basis_list[j] for j in range(0,len(qpc_init))]
 
+    # make sure these stay as sparse matrices
+    b1 = basis(2,0)
+    b1.data = data.to(data.CSR, b1.data)
+    
+    b2 = basis(2,1)
+    b2.data = data.to(data.CSR, b2.data)
+
     # create the dot basis
-    dot_basis = [tensor(basis(2,0),basis(2,1)), tensor(basis(2,1),basis(2,0))]
+    dot_basis = [tensor(b1,b2), tensor(b2,b1)]
     
     # build the initial condition for the dot
     if DD0 == "first": 
