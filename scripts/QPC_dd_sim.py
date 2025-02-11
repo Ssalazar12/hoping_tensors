@@ -23,8 +23,8 @@ from qutip_tools import *
 # --------------------------------
 
 # location where the raw data is saved
-data_route = "../data/sims/L=20/"
-# data_route = "/scratch/scc/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=20/"
+# data_route = "../data/sims/L=20/"
+data_route = "/scratch/scc/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=20/"
 # it is important to have them as lists
 
 L_qpc_list = [16]  # lenth of the QPC chain
