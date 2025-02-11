@@ -27,7 +27,7 @@ from qutip_tools import *
 data_route = "/scratch/scc/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=20/"
 # it is important to have them as lists
 
-L_qpc_list = [30]  # lenth of the QPC chain
+L_qpc_list = [16]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [9] # maximum time
 tsteps_list = [300] # number of time steps
