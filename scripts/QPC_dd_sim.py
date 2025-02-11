@@ -162,7 +162,9 @@ def get_entanglement(States, L ,tskip=5):
     state_arr = States[0::tskip]
     for ti in range(0,len(state_arr)):
         # DD reduced density matrix
-        rho_DD = get_partial_trace(state_arr[ti], L)
+        # rho_DD = get_partial_trace(state_arr[ti], L)
+        rho = state_arr[ti]*state_arr[ti].dag()
+        rho_DD = rho.ptrace(sel=[L-2,L-1])
 
         # cut redundant degrees for blochsphere calculation
         r = Qobj(rho_DD[1:-1,1:-1])
