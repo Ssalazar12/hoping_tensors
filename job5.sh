@@ -12,4 +12,4 @@
 # start program, if excecutable of course just call it
 module load conda
 source activate qpc_venv
-python /scratch/scc/santiago.salazar-jaramillo/hoping_tensors/scripts/QPC_dd_sim.py
+python /scratch/scc/santiago.salazar-jaramillo/hoping_tensors/scripts/QPC_dd_sim5.py
