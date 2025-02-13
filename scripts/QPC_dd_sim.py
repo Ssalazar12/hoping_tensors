@@ -5,6 +5,7 @@ import os
 import sys
 import h5py
 import json
+import gc
 
 from tqdm import tqdm
 
@@ -290,6 +291,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     grp.create_dataset("dot_bloch_phi", data=phi_list)
     
     results_file.close()
+    gc.collect()
 
     """# now save the wavefunction
                 file_name = "psi_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}".format(L_qpc, max_t, band_width, 
