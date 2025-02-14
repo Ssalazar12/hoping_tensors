@@ -18,7 +18,7 @@ from qutip import  *
 # --------------------------------
 
 J=1
-data_route = "../data/sims/L=14/"
+data_route = "../data/sims/L=21/"
 
 # --------------------------------
 # Functions 
