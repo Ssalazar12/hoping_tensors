@@ -5,10 +5,6 @@ from scipy.integrate import simpson
 # from scipy import sparse
 from scipy.optimize import curve_fit
 
-# import h5py
-# import json
-# import os
-# from qutip import *
 from qutip_tools import *
 
 # In this script we generate a dataset (.csv file) from the raw data
@@ -19,7 +15,6 @@ from qutip_tools import *
 
 J = 1
 data_route = "../data/sims/L=21/"
-tinf = 15.0
 
 # --------------------------------
 # Functions
@@ -56,10 +51,22 @@ for i in range(0, len(file_list)):
         print(file_)
 
     # Load observables
-    param_dict, times, n_bond, n_left, n_right, n_d1, n_d2, traject, VN_entropy, purity, dd_theta , dd_phi = load_data(data_route, file_, tinf)
+    param_dict, times, n_bond, n_left, n_right, n_d1, n_d2, traject, VN_entropy, purity, dd_theta , dd_phi = load_data(data_route, file_)
 
     # calculate data for the time scales
     tau_L, tau_free, tau_b, vg, x_av, bond_root = get_timescale_data(param_dict, traject, times, n_bond)
+
+    # find time index nearest to the hitting time with interaction
+    time_f_i = find_nearest_index(times, tau_L)
+    xf_avg_int = x_av[time_f_i]
+    r_density_int = n_right[time_f_i]
+    last_density_int = traject[-1][time_f_i]
+
+    # find time index nearest to the hitting time in the free case
+    time_f_i = find_nearest_index(times, tau_free)
+    xf_avg_free = x_av[time_f_i]
+    r_density_free = n_right[time_f_i]
+    last_density_free = traject[-1][time_f_i]
 
     # to estimate the error of how good the time at bond estimation is do a gaussian fit
     # As initial guess of the standard dev put FWHM
@@ -73,25 +80,12 @@ for i in range(0, len(file_list)):
         print(" ---------- ")
         print("truncating time to infinity value")
         print("------------")
-        closest_float = times.flat[np.abs(times - tinf).argmin()]
-        last_t_index = np.argwhere(times == closest_float)[0][0]
-        initial_guess = [1, np.mean(n_bond), tau_b]
-        params, covariance = curve_fit(gaussian, times[:last_t_index], n_bond[:last_t_index], p0=initial_guess)
+
+        """initial_guess = [1, np.mean(n_bond), tau_b]
+        params, covariance = curve_fit(gaussian, times[:time_f_i], n_bond[:time_f_i], p0=initial_guess)
         gauss_fit = gaussian(times, *params)
         # we choose the error measure as the maximum covariance error
-        gauss_error = max(np.sqrt(np.diag(covariance)))
-
-    # find time index nearest to the hitting time with interaction
-    time_f_i = find_nearest_index(times, tau_L)
-    xf_avg_int = x_av[time_f_i]
-    r_density_int = n_right[time_f_i]
-    last_density_int = traject[-1][time_f_i]
-
-    # find time index nearest to the hitting time in the free case
-    time_f_i = find_nearest_index(times, tau_free)
-    xf_avg_free = x_av[time_f_i]
-    r_density_free = n_right[time_f_i]
-    last_density_free = traject[-1][time_f_i]
+        gauss_error = max(np.sqrt(np.diag(covariance)))"""
 
     # get transmision probabilities from scattering analytics
     T0, T_tot = get_transmision_proba(param_dict, J)
