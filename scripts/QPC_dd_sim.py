@@ -25,14 +25,14 @@ from qutip_tools import *
 
 # location where the raw data is saved
 # data_route = "../data/sims/L=16/"
-data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=16/"
+data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=21/"
 # it is important to have them as lists
 
 L_qpc_list = [21]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [18] # maximum time
-tsteps_list = [350] # number of time steps
-bond_index_list = [int(L_qpc_list[0]/2)] # 7  # dangling bond between bond_index and bond_index+1
+tsteps_list = [400] # number of time steps
+bond_index_list = [7] #[int(L_qpc_list[0]/2)] # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
 band_width_list = [0.5, 2.0] # width of the gaussian wave packet
 K0_list = [np.pi/8, np.pi/6,np.pi/4, 5*np.pi/16, 6*np.pi/16, 7*np.pi/16 ,np.pi/2] # Initial velocity of the wavepacket
