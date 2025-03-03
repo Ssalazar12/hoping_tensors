@@ -65,14 +65,17 @@ def load_data(dir_route, file):
 
         # Bloch sphere for DD dot_bloch_theta dot_bloch_phi
         # since for entropy and such we coarse grained tim we need this again
-        last_t_index = find_nearest_index(Times[::Param_dict["entropy_t_skip"]], tau_free)
-
-        DD_costheta = res_h5["results/dot_bloch_costheta"][:last_t_index]
-        DD_sinphi = res_h5["results/dot_bloch_sinphi"][:last_t_index]
-        # when theta = 0 phi becomes undefined because it could take any values
-        nan_index = np.argwhere(np.isnan(DD_sinphi))[0][0]
-        # replace the nan value with the next numerical val
-        DD_sinphi[nan_index] = DD_sinphi[nan_index + 1]
+        # if there are nans' then eliminated them
+        try:
+            last_t_index = find_nearest_index(Times[::Param_dict["entropy_t_skip"]], tau_free)
+            DD_costheta = res_h5["results/dot_bloch_costheta"][:last_t_index]
+            DD_sinphi = res_h5["results/dot_bloch_sinphi"][:last_t_index]
+            # when theta = 0 phi becomes undefined because it could take any values
+            nan_index = np.argwhere(np.isnan(DD_sinphi))[0][0]
+            # replace the nan value with the next numerical val
+            DD_sinphi[nan_index] = DD_sinphi[nan_index + 1]
+        except IndexError:
+            pass
 
     res_h5.close()
 

@@ -34,7 +34,8 @@ data_dict = {'L_qpc': [], 'max_time': [], 'tsteps': [], 'bond_index': [],
              "r_density_free": [], "r_density_int": [], "last_density_free": [], "last_density_int": [],
              "last_density_max": [], "time_last_density_max": [], "bond_density_max": [], "min_purity": [],
              "max_VN_entropy": [],
-             "entanglement_timeskip": [], "T_mean": [], "ddot0": [], "kick": []}
+             "entanglement_timeskip": [], "T_mean": [], "ddot0": [], "kick": [],  "theta_f": [], "phi_f": [],
+             "delta_phi": []}
 
 file_list = os.listdir(data_route)
 
@@ -51,7 +52,7 @@ for i in range(0, len(file_list)):
         print(file_)
 
     # Load observables
-    param_dict, times, n_bond, n_left, n_right, n_d1, n_d2, traject, VN_entropy, purity, dd_theta , dd_phi = load_data(data_route, file_)
+    param_dict, times, n_bond, n_left, n_right, n_d1, n_d2, traject, VN_entropy, purity, dd_costheta , dd_sinphi = load_data(data_route, file_)
 
     # calculate data for the time scales
     tau_L, tau_free, tau_b, vg, x_av, bond_root = get_timescale_data(param_dict, traject, times, n_bond)
@@ -70,22 +71,11 @@ for i in range(0, len(file_list)):
 
     # to estimate the error of how good the time at bond estimation is do a gaussian fit
     # As initial guess of the standard dev put FWHM
-    try:
-        initial_guess = [1, np.mean(n_bond), tau_b]
-        params, covariance = curve_fit(gaussian, times, n_bond, p0=initial_guess)
-        gauss_fit = gaussian(times, *params)
-        # we choose the error measure as the maximum covariance error
-        gauss_error = max(np.sqrt(np.diag(covariance)))
-    except RuntimeError:
-        print(" ---------- ")
-        print("truncating time to infinity value")
-        print("------------")
-
-        """initial_guess = [1, np.mean(n_bond), tau_b]
-        params, covariance = curve_fit(gaussian, times[:time_f_i], n_bond[:time_f_i], p0=initial_guess)
-        gauss_fit = gaussian(times, *params)
-        # we choose the error measure as the maximum covariance error
-        gauss_error = max(np.sqrt(np.diag(covariance)))"""
+    initial_guess = [1, np.mean(n_bond), tau_b]
+    params, covariance = curve_fit(gaussian, times, n_bond, p0=initial_guess)
+    gauss_fit = gaussian(times, *params)
+    # we choose the error measure as the maximum covariance error
+    gauss_error = max(np.sqrt(np.diag(covariance)))
 
     # get transmision probabilities from scattering analytics
     T0, T_tot = get_transmision_proba(param_dict, J)
@@ -98,8 +88,16 @@ for i in range(0, len(file_list)):
     # get the maximum of the density in the last site and the time
     n_max = traject[-1].max()
     time_last_density_max = times[traject[-1].argmax()]
+
     # calcualte the "kick"
     kick = param_dict["Omega"] * simpson(n_bond, dx=times[1] - times[0])
+
+    # get the change between the initial phi and the final value
+    phi0 = np.pi/2 # we always choose this value of phi0
+    dd_theta = np.arccos(dd_costheta)
+    dd_phi = np.arcsin(dd_sinphi)
+
+    delta_phi = phi0 - dd_phi[-1].real
 
     data_dict["vg"].append(vg)
     data_dict["time_at_bond"].append(tau_b)
@@ -138,6 +136,9 @@ for i in range(0, len(file_list)):
     data_dict["Omega"].append(param_dict["Omega"])
     data_dict["ddot0"].append(param_dict["ddot0"])
     data_dict["kick"].append(kick)
+    data_dict["theta_f"].append(dd_theta[-1].real)
+    data_dict["phi_f"].append(dd_phi[-1].real)
+    data_dict["delta_phi"].append(delta_phi)
 
 data_df = pd.DataFrame.from_dict(data_dict)
 
