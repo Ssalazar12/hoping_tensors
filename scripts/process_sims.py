@@ -52,6 +52,7 @@ for i in range(0, len(file_list)):
         print(file_)
 
     # Load observables
+    # remember that when we load the data it is already truncated to the time the QPC hits the end of the chain
     param_dict, times, n_bond, n_left, n_right, n_d1, n_d2, traject, VN_entropy, purity, dd_costheta , dd_sinphi = load_data(data_route, file_)
 
     # calculate data for the time scales
@@ -80,9 +81,9 @@ for i in range(0, len(file_list)):
     # get transmision probabilities from scattering analytics
     T0, T_tot = get_transmision_proba(param_dict, J)
     # average over the numerical transmision rate (n right)
-    # for the final times (time in tending to infinity)
-    # find the index corresponding to t=6
-    start_time = find_nearest_index(times, 8)
+    # start after the particle has crossed the bond until it hits the wall
+    tau_to_bond = param_dict["bond_index"]/(2*J*np.sin(param_dict["k0"]))
+    start_time = find_nearest_index(times, tau_to_bond)
     T_mean = np.mean(n_right[start_time:])
 
     # get the maximum of the density in the last site and the time
@@ -97,6 +98,11 @@ for i in range(0, len(file_list)):
     dd_theta = np.arccos(dd_costheta)
     dd_phi = np.arcsin(dd_sinphi)
 
+    tskip = param_dict["entropy_t_skip"]
+
+    # get the phi at the end of the interaction with the QPC
+    times_coarse = times[:-tskip:tskip] # rtemember the coarse graining in bloch sphere
+    measure_end = find_nearest_index(times_coarse, tau_to_bond + tau_b)
     delta_phi = phi0 - dd_phi[-1].real
 
     data_dict["vg"].append(vg)
