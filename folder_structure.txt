@@ -1,4 +1,6 @@
-│projectdir          <- Project's main folder. It is initialized as a Git
+│
+
+projectdir          <- Project's main folder. It is initialized as a Git
 │                       repository with a reasonable .gitignore file.
 │
 ├── _research        <- WIP scripts, code, notes, comments,
@@ -33,3 +35,5 @@
 ├── Manifest.toml    <- Contains full list of exact package versions used currently.
 └── Project.toml     <- Main project file, allows activation and installation.
                         Includes DrWatson by default.
+
+

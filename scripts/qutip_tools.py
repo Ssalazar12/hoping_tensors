@@ -26,56 +26,47 @@ def load_data(dir_route, file):
     with h5py.File(dir_route + file, 'r') as res_h5:
         J=1
         Param_dict = json.loads(res_h5['metadata/parameters'][()])
-
-        # load qpc data
-        N_bond = res_h5["results/QPC_bond_density"][:]
-        N_left = res_h5["results/QPC_left_density"][:]
-        N_right = res_h5["results/QPC_right_density"][:]
-
-        # load dot data
-        N_d1 = res_h5["results/d1_density"][:]
-        N_d2 = res_h5["results/d2_density"][:]
-
         # time range
         Times = res_h5["results/time"][:]
-
-        # trajectories
-        Trajectories = res_h5["results/trajectories"][:]
-
-        # entanglement
-        VN_entropy = res_h5["results/dot_VN_entropy"][:]
-        Purity = res_h5["results/dot_purity"][:]
-
         # Here we definide t=infty when the free QPC particle would hit the bond
-        # which is calculated like this
-        # trajectory using Ehrenfest Therem
+        # which is calculated using Ehrenfest Therem
         vg = 2 * J * np.sin(Param_dict["k0"])
         tau_free = Param_dict["L_qpc"] / vg
         last_t_index = find_nearest_index(Times, tau_free)
+        last_t_index_full = last_t_index # save it to use for later
 
-        Times = Times[:last_t_index]
-        N_bond = N_bond[:last_t_index]
-        N_left = N_left[:last_t_index]
-        N_right = N_right[:last_t_index]
-        N_d1 = N_d1[:last_t_index]
-        N_d2 = N_d2[:last_t_index]
-        Trajectories = Trajectories[:,:last_t_index]
-        VN_entropy = VN_entropy[:last_t_index]
-        Purity = Purity[:last_t_index]
+        # load qpc data
+        N_bond = res_h5["results/QPC_bond_density"][:last_t_index]
+        N_left = res_h5["results/QPC_left_density"][:last_t_index]
+        N_right = res_h5["results/QPC_right_density"][:last_t_index]
 
-        # Bloch sphere for DD dot_bloch_theta dot_bloch_phi
-        # since for entropy and such we coarse grained tim we need this again
-        # if there are nans' then eliminated them
+        # load dot data
+        N_d1 = res_h5["results/d1_density"][:last_t_index]
+        N_d2 = res_h5["results/d2_density"][:last_t_index]
+
+        # trajectories
+        Trajectories = res_h5["results/trajectories"][:,:last_t_index]
+
+        # Quantities depending on the reduced density matrix are coarse grained in time
+        # therefore for those the final time has to be chosen as the closest one they have
+        last_t_index = find_nearest_index(Times[0::Param_dict["entropy_t_skip"]], tau_free)
+        DD_costheta = res_h5["results/dot_bloch_costheta"][:last_t_index]
+        DD_sinphi = res_h5["results/dot_bloch_sinphi"][:last_t_index]
+        # entanglement
+        VN_entropy = res_h5["results/dot_VN_entropy"][:last_t_index]
+        Purity = res_h5["results/dot_purity"][:last_t_index]
+
+        # when theta = 0 phi becomes undefined because it could take any values
         try:
-            last_t_index = find_nearest_index(Times[::Param_dict["entropy_t_skip"]], tau_free)
-            DD_costheta = res_h5["results/dot_bloch_costheta"][:last_t_index]
-            DD_sinphi = res_h5["results/dot_bloch_sinphi"][:last_t_index]
-            # when theta = 0 phi becomes undefined because it could take any values
+            print("phi is undefined using next values")
             nan_index = np.argwhere(np.isnan(DD_sinphi))[0][0]
             # replace the nan value with the next numerical val
-            DD_sinphi[nan_index] = DD_sinphi[nan_index + 1]
+            DD_sinphi[nan_index] = DD_sinphi[nan_index + 1]    
+
         except IndexError:
             pass
+
+        Times = Times[:last_t_index_full]
 
     res_h5.close()
 
