@@ -9,3 +9,4 @@ $n$-Shot
 Qubit
 Dephasing
 Lüdder
+eigenstate
