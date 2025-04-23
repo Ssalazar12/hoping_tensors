@@ -10,3 +10,7 @@ Qubit
 Dephasing
 Lüdder
 eigenstate
+eigenstates
+observables
+wavefunction
+unitarily
