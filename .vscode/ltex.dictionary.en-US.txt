@@ -14,3 +14,6 @@ eigenstates
 observables
 wavefunction
 unitarily
+diagonalize
+diagonalized
+eigenenergies
