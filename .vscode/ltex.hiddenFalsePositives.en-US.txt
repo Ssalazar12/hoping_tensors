@@ -1,3 +1,5 @@
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QLe Journal de Physique Colloques\\E$"}
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QBertlmann's Socks and the Nature of Reality\\E$"}
 {"rule":"SOME_OF_THE","sentence":"^\\QSection \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q introduces the main ideas behind weak measurements and discusses some of the existing literature surrounding their application to QPC's.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QBey Ehrenfest's theorem, this corresponds\\E$"}
+{"rule":"EN_COMPOUNDS","sentence":"^\\QThis is due to our initial assumption of the pre-measurement occurring in a small time window.\\E$"}
