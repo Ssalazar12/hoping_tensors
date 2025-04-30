@@ -94,7 +94,7 @@ equation \cite{schrodingerQuantisierung1926,heisenbergUeberQuanten1985}. Yet, at
 moment of measurement, this superposition collapses to a final state in a fundamentally 
 probabilistic process. However, and to complicate
 matters further, it is also possible to conduct measurements without bringing about 
-a collapse of the wavefunction. Such a measurement is referred to as a \textit{weak/non-projective measurement}, in contrast to the usual \textit{projective measurement}.
+a collapse of the wavefunction. Such a measurement is referred to as a \textit{weak/nom-invasive measurement}, in contrast to the usual \textit{projective measurement}.
 
 In the following, we show how weak measurements arise via the ancilla scheme, and discuss the regime
 in which they are realized. Afterwards, we present the concept of weak values by adding 
@@ -108,12 +108,11 @@ Weak measurements do not require extensions to the axioms of quantum mechanics; 
  \hat{H} = \hat{H}_S + \hat{H}_D + \hat{H}_{I}
 \end{align}
 where $\hat{H}_S $, $\hat{H}_D $, $ H_{I}$ correspond to system, detector and interaction Hamiltonian respectively. 
-Initially, they are prepared independent to each other, then are correlated via unitary 
-time evolution in what is called \textit{pre-measurement} and finally the \textit{read-out} is performed by doing a 
-projective measurement on the detector. Under the right conditions, the post-measurement system will remain in
-a superposition of states with minimal change.
-The specific way of realizing this process is called
-the ancilla scheme. 
+Initially, system and detector are prepared completely independent to each other. Then, they are correlated via unitary 
+time evolution through their interaction Hamiltonian, in a process called the \textit{pre-measurement}. Finally, the \textit{read-out} is performed by performing a 
+projection only the detector. The system will in turn be affected 
+by this projection, however under the right conditions, it will still remain in a superposition of states with minimal change.
+The specific way of realizing this process is called the ancilla scheme. 
 
 Following \cite{svenssonPedagogicalWeak2013}, the ancilla scheme starts with the initial uncorrelated 
 state written as the density Matrix
@@ -123,14 +122,14 @@ state written as the density Matrix
 where the reduced density matrices of the system $\hat{\rho_S} = \ket{\psi} \bra{\psi}$ and detector 
 $\hat{\rho_D} = \ket{\eta} \bra{\eta}$ are prepared in some arbitrary pure state. In the pre-measurement, they 
 become correlated via the usual time evolution operator $\hat{U} = \exp{ -\frac{i}{\hbar} \int dt \, \hat{H}}$. It is
-also assumed that the intrinsic Hamiltonians of the system and detector vanish 
+also assumed that the intrinsic Hamiltonians of the system and detector vanish \cite{PreskillQuantum,svenssonPedagogicalWeak2013,tamirWeakMeasurements2013} 
 \sj{(I still don't understand why)}, 
 such that only the interaction Hamiltonian appears in $\hat{U}$. This Hamiltonian is assumed to be
 \begin{align}
     \hat{H}_{I} = \lambda (t) \hat{S} \otimes \hat{M}
 \end{align}
 where $\lambda$ is the coupling constant, $\hat{S}$ is the observable of the system we want to measure and $\hat{M}$
-is some observable of the detector (also called the pointer). In addition, as quantum non-demolition is required, 
+is some observable of the detector (also called the pointer). In addition, as quantum non-demolition is required \cite{svenssonPedagogicalWeak2013} \sj{(I haven't been able to find anything regarding non-demolition or what it actually means)}, 
 the measured observable should also fulfill $[\hat{H}_I, \hat{S}]=0$. Accordingly, the time evolution operator is given by 
 \begin{align}
     \hat{U} = \exp{ -\frac{i}{\hbar} \int dt \,  \lambda (t) \hat{S}\otimes \hat{M} },
@@ -140,35 +139,38 @@ finite time window.
 
 A particular version of pre-measurement was already proposed in 1938 by von Neumann in 
 \cite{vonNeumannFoundationsQuantum2018}, where $\hat{M}$ is the detector's momentum $\hat{p}$ and the 
-coupling is $\lambda (t) = \lambda \, \beta (T)$ where $\beta (T)$ is 
-the step function and $T$ is the measurement time window. Due to the choice of $\hat{M}$ and $\lambda(t)$
+coupling is $\lambda (\tau) = \lambda \, (\theta (T) - \theta(\tau - T))$ where $\theta (T)$ is 
+the step function and $T$ is the measurement time window. Due to the choice of $\hat{M}$ and $\lambda(\tau)$
 von Neumann's approach correlates the state of the system with the position of the detector and the  effective coupling strength becomes dependent on the measurement time $T$. 
 
 For now, we assume the same coupling as von Neumann, but leave an arbitrary $\hat{M}$ for the detector. By expanding
-$\hat{U}$ in its diagonal basis $\ket{s}$ with eigenvalues $s$, the time evolved pre-measurement state is expressed as
+$\hat{S}$ in its diagonal basis $\ket{s}$ with eigenvalues $s$, the time evolved pre-measurement state is expressed as
 \begin{align*}
-  \hat{\rho}_1 = \hat{U}\hat{\rho}_0 \hat{U}^\dagger & =  \sum_{s,s^\prime} \ket{s} e^{-\frac{i}{\hbar} \lambda T s \hat{M} } \bra{s}
-  \left (  \hat{\rho}_S \otimes \hat{\rho}_D \right ) \ket{s^\prime} e^{-\frac{i}{\hbar} \lambda 
-    T s^\prime \hat{M} } \bra{s^\prime}.
+  \hat{\rho}_1 = \hat{U}\hat{\rho}_0 \hat{U}^\dagger & =  \sum_{i,j} \ket{s_i} e^{-\frac{i}{\hbar} \lambda T s \hat{M} } \bra{s_i}
+  \left (  \hat{\rho}_S \otimes \hat{\rho}_D \right ) \ket{s_j} e^{-\frac{i}{\hbar} \lambda 
+    T s_j\hat{M} } \bra{s_j},
 \end{align*}
-Here, it is useful to define the pointer states $\ket{\mu_s}$ and projection operators $\hat{P}_s$ as
+in terms of its density matrix 
+$\hat{\rho}_1 = \ket{\psi_{\text S}} \otimes \ket{\phi_{\rm M}}\bra{\psi_{\text S}} \otimes \bra{\phi_{\rm D}}$.
+Here, it is useful to define the pointer states of the detector 
+$\ket{\mu_s}$ and projection operators $\hat{P}_s$ as
 \begin{align}
-    & \ket{\mu_s} := e^{-\frac{i}{\hbar} \lambda T s \hat{M} } \ket{\eta} = \sum_m  e^{-\frac{i}{\hbar} \lambda T s m } 
+    & \ket{\mu_{s_i}} := e^{-\frac{i}{\hbar} \lambda T s_i \hat{M} } \ket{\phi_{\rm D}} = \sum_m  e^{-\frac{i}{\hbar} \lambda T s m } 
     \alpha_m \ket{m} \\
-    & \hat{P}_s := \ket{s} \bra{s}
+    & \hat{P}_{s_i} := \ket{s_i} \bra{s_i}
 \end{align}
-where we have expanded $\ket{\eta}$ in the eigenstates $\ket{m}$ of $\hat{M}$. It is important to notice that the pointer states do not have to
-be orthogonal and in fact, they often are not. Using these definitions,$\rho_1$ is becomes
+where we have expanded $\ket{\phi_{\rm D}}$ in the eigenstates $\ket{m}$ of $\hat{M}$. It is important to notice that the pointer states do not have to
+be orthogonal and in fact, they often are not. Using these definitions,$\rho_1$ becomes
 \begin{align}\label{eq:pre_measurement}
-    \hat{\rho}_1 = \sum_{s,s^\prime} ( \hat{P}_s \hat{\rho}_S \hat{P}_{s^\prime} ) \otimes 
-    (\ket{\mu_s}\bra{\mu_{s^\prime}})
+    \hat{\rho}_1 = \sum_{i,j} ( \hat{P}_{s_i} \hat{\rho}_S \hat{P}_{s_j} ) \otimes 
+    (\ket{\mu_{s_i}}\bra{\mu_{{s_j}}})
 \end{align}
 Looking at $\hat{\rho}_1$, it is clear that the system and detector have become entangled through $\hat{U}$, as
 it is not possible to express the joint density matrix as a product state. The corresponding mixed state of the system
 is given by tracing out the detector states
 \begin{align}\label{eq:pre_measurement_system_full}
-    \hat{\rho}_{S,1} =  \sum_m \bra{m}\hat{\rho}_{1}\ket{m} = \sum_{s,s^\prime} \hat{P}_s \hat{\rho}_{S} \hat{P}_s
-    \bra{\mu_{s^\prime}} \ket{\mu_s},
+    \hat{\rho}_{S,1} =  \sum_m \bra{m}\hat{\rho}_{1}\ket{m} = \sum_{i,j} \hat{P}_{s_i} \hat{\rho}_{S} \hat{P}_{s_j}
+    \bra{\mu_{s_j}} \ket{\mu_{s_i}},
 \end{align}
 as a result the system now depends on the overlap of the meter states. 
 
@@ -207,12 +209,13 @@ The same procedure can be repeated for equation \eqref{eq:pre_measurement_system
     \bra{s_i}\hat{\rho}_{S,1}\ket{s_j} =  \bra{s_i}\hat{\rho}_{S}\ket{s_j} \bra{\mu_{s_i}}\ket{\mu_{s_j}}.
 \end{align}
 Given that both equation \eqref{eq:pre_measurement_system_expansion} and \eqref{eq:pre_measurement_system_full_elements} have to agree (up to second order in $g$), then the overlaps of the 
-meter states have to fulfill
+pointer states have to fulfill
 \begin{align}\label{eq:overlap_condition}
     \bra{\mu_{s_i}}\ket{\mu_{s_j}} \overset{!}{=} 1 - \frac{g^2}{2} \langle \hat{M}^2\rangle (s_i - s_j)^2 + \mathcal{O}(g^3)
 \end{align}
-if a measurement is to be weak. Given that the corrections are second order, the meter states have almost 
-total overlap in weak measurements. This requirement can be rephrased as the variance in the detector's 
+if a measurement is to be weak. Since the corrections are second order, the pointer states have almost 
+total overlap in weak measurements. 
+This requirement can be rephrased as the variance in the detector's 
 measured observable being larger than the difference between the eigenenergies of the system \cite{tamirWeakMeasurements2013}. 
 Such a situation implies
 that there is a large statistical uncertainty in the measurement process, which requires multiple repetitions of an experiment in order to obtain precise values of observables. An example of such an experimental setup is quantum tomography \sj{(cite some examples)}.
@@ -229,9 +232,9 @@ of obtaining $m_k$, given the state $\hat{\rho}_1$". This probability can be eas
 definition complete trace
 \begin{align}
     \text{prob}(m_k|\hat{\rho}_1) & = \Tr{ \Id_S \otimes \ket{m_k}\bra{m_k}\hat{\rho}_1} \\ \nonumber 
-            & = \sum_{j,s,s^\prime} \bra{s_j} \hat{P}_s \hat{\rho}_S \hat{P}_{s^\prime} \ket{s_j} 
-            (\bra{m_k}\ket{\mu_s}\bra{\mu_{s^\prime}} \ket{m_k}) \nonumber \\ 
-            & = \sum_{j} \bra{s_j} \hat{\rho}_{S}\ket{s_j} | \bra{m_j}\ket{\mu_j}|^2,
+            & = \sum_{l,i,j} \bra{m_l}\otimes\bra{s_l} \hat{P}_{s_i} \hat{\rho}_S \hat{P}_{s_{j}} 
+            \bra{m_k}\ket{\mu_{s_i}}\bra{\mu_{s_j}} \ket{m_k}\ket{s_l}\otimes\ket{m_l} \nonumber \\ 
+            & = \sum_{j} \bra{s_j} \hat{\rho}_{S}\ket{s_j} | \bra{m_k}\ket{\mu_j}|^2,
 \end{align}
 where the treatment of classical probabilities in the last line, is much like what one would expect in a 
 classical Bayesian paradigm \cite{svenssonPedagogicalWeak2013}. From \eqref{eq:post_measurement_state} the post-readout reduced density matrix of the system is obtained by tracing out the detector's degrees of 
@@ -297,14 +300,14 @@ a detector, such that the composite density matrix is given by
 still entangled), a projective measurement of some state $\ket{f}$, called the \textit{post-selected state}, is carried out on the system
 \begin{align}
     \hat{\rho}_1 (\ket{f}) = \frac{1}{\text{prob}(f|\hat{\rho}_1)} (\hat{P}_f \otimes \Id_D )
-    \hat{\rho}_1
+    \hat{\rho}_1 (\hat{P}_f \otimes \Id_D )
 \end{align}
 as dictated by Lüdder's rule \eqref{eq:post_measurement_state}. This step, is interpreted as only recording the 
 experimental realizations in which the system ends up in the states $\ket{f}$, hence the name
 post-selection. Given that the system and detector where both entangled before this step,
 the detector's reduced density matrix is changed as 
  \begin{align}
-    \hat{\rho}_{D,1} (\ket{f}) & = \frac{1}{\text{prob}(f|\hat{\rho}_1)}\Tr_S{(\hat{P}_f \otimes \Id_D )\hat{\rho}_1} \nonumber\\
+    \hat{\rho}_{D,1} (\ket{f}) & = \frac{1}{\text{prob}(f|\hat{\rho}_1)}\Tr_S{(\hat{\rho}_1 (\ket{f}) } \nonumber\\
     & =\frac{1}{\text{prob}(f|\hat{\rho}_1)}|\bra{f} \ket{s}|^2\left[\hat{\rho}_D+2 g \Im\left(S_w \hat{M} \hat{\rho}_D\right)- \right. \\
     &\left. - g^2 \Re\left(\frac{\bra{f} \hat{S}^2\ket{s}}{\bra{f} \ket{s}} \hat{M}^2 \hat{\rho}_D-\left|S_w\right|^2 \hat{M} \hat{\rho}_D \hat{M}\right)\right] + \mathcal{O}(g^3) \nonumber
 \end{align}
@@ -637,7 +640,7 @@ In order to entangle the QPC and DD, the unitary time evolution is expressed, fo
 ancilla scheme and von Neumann as
 \begin{align}
     \hat{U}(T) \approx & e^{i\Omega T \hat{\sigma}_z \otimes \hat{p}} \\
-            & = \ket{0}\bra{0} e^{-\Omega T \hat{P}} + \ket{1}\bra{1} e^{\Omega T \hat{P}}
+            & = \ket{0}\bra{0} e^{-\Omega T \hat{P}} + \ket{1}\bra{1} e^{\Omega T \hat{´}}
 \end{align}
 where the system's observable is its position (measured by $\hat{\sigma}_z$) and it is coupled to the momentum 
 $\hat{p}$ of the QPC for the duration $T$ of the measurement. 
@@ -649,7 +652,9 @@ Applying this unitary operator to the initial state yields
     \ket{\Psi_1} = \cos(\theta/2) \ket{0}\otimes \ket{\psi_{\rm QPC}(x_0-\Omega T)} + 
                     \sin(\theta/2) e^{i\phi}\ket{0}\otimes \ket{\psi_{\rm QPC}(x_0+\Omega T)}, 
 \end{eqnarray}
-by using the fact that $\hat{p}$ is a generator of translations in position space \cite{vonNeumannFoundationsQuantum2018}. As is expected, the pre-measurement state is entangled. The reduced
+by using the fact that $\hat{p}$ is a generator of translations in position space \cite{vonNeumannFoundationsQuantum2018} \sj{(Jeff raised a good question here and is if
+in the numerics we are really coupling to the position?)}. 
+As is expected, the pre-measurement state is entangled. The reduced
 density matrix of the dot can then be found by tracing out the detector states with its position basis
 \begin{align*}
     \hat{\rho}_{1,DD} = \sum_{m} \left(\Id_{\rm DD}\otimes \bra{x_m}\right)  \ket{\Psi_1} \bra{\Psi_1}
@@ -730,7 +735,7 @@ in the position basis as dictated by equation \eqref{eq:qpc_gauss_lattice}, with
 coefficients taken from the normal distribution \eqref{eq:gaussian_distribution}. Here,
 only the basis states with a single particle are included in the expansion. As discussed in section
 \ref{sect:scattering}, special care has to be taken when choosing the spread of the wave packet. 
-Preliminary testing has shown that a spread of $\Delta =2$ produces a sufficiently localized 
+Preliminary testing has shown that a spread of $\Delta =2 J$ produces a sufficiently localized 
 momentum distribution without causing the spatial distribution to overlap with the bond, as the 
 wave packet is roughly localized to around 3 lattice sites. This will allow us to have both well-defined trajectories and a time window when the detector interacts with the 
 system. In this case, 
