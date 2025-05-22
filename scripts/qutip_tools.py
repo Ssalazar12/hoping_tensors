@@ -132,6 +132,17 @@ def get_transmision_proba(Param_dict, J):
 # FOR CREATING HAMILTONIANS AND OPERATORS IN QUTIP
 # ----------------------------------------------------
 
+def get_qpc_H(op_list, Nsites, Nqpc,jcouple):
+        # create the Hamiltonian for the QPC where Nsites includes the double dot
+    # and Nqpc only has the qpc site
+    ident_tensor = tensor([identity(2)]*(Nsites)) 
+    H = 0*ident_tensor
+
+    for site_j in range(0,Nqpc-1):
+        H += -jcouple[site_j]*(op_list[site_j].dag()*op_list[site_j+1]+
+                                   op_list[site_j+1].dag()*op_list[site_j])
+    return H 
+
 def get_thight_binding_hamiltonian(op_list, Nsites,jcouple, bc="fixed"):
     # creates the tight binding hamiltonian  from the fermion operators in op_list
     # and the coupling array jcouple with the chosen boundary conditions

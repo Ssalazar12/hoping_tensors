@@ -69,16 +69,6 @@ def get_DD_init_for_fixed_k(k_prime):
                         
     return alpha0, beta0
 
-def get_qpc_H(op_list, Nsites, Nqpc,jcouple):
-        # create the Hamiltonian for the QPC where Nsites includes the double dot
-    # and Nqpc only has the qpc site
-    ident_tensor = tensor([identity(2)]*(Nsites)) 
-    H = 0*ident_tensor
-
-    for site_j in range(0,Nqpc-1):
-        H += -jcouple[site_j]*(op_list[site_j].dag()*op_list[site_j+1]+
-                                   op_list[site_j+1].dag()*op_list[site_j])
-    return H 
 
 def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
     # Combines the 1particle bassi of the QPC and the dot to get the full psi
