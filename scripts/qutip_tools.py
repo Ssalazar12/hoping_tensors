@@ -31,7 +31,9 @@ def load_data(dir_route, file):
         # Here we definide t=infty when the free QPC particle would hit the bond
         # which is calculated using Ehrenfest Therem
         vg = 2 * J * np.sin(Param_dict["k0"])
-        tau_free = Param_dict["L_qpc"] / vg
+        # effective mass in tightbinding
+        tau_free = Param_dict["L_qpc"]/ vg
+        print(tau_free, Param_dict["k0"])
         last_t_index = find_nearest_index(Times, tau_free)
         last_t_index_full = last_t_index # save it to use for later
 
@@ -83,12 +85,13 @@ def get_timescale_data(Param_dict, Traject, Times, N_bond):
     r_vect = np.arange(0, Param_dict["L_qpc"])
     # position average in time
     x_av = np.asarray([np.dot(QPC_traject[:, i], r_vect) for i in range(0, len(Times))])
+    # effective mass in tightbinding
 
     # trajectory using Ehrenfest Therem
     vg = 2 * J * np.sin(Param_dict["k0"])
 
     # time to get to the bond which is between [bond_index and bond_index+1]
-    tau_0b = (Param_dict["bond_index"] - 1) / vg
+    tau_0b = (Param_dict["bond_index"] - 1)/ vg
 
     # time at the bond defined at width at half maximum of the bond occupation
     # estimate FWHF with an interpolation
@@ -103,12 +106,12 @@ def get_timescale_data(Param_dict, Traject, Times, N_bond):
         tau_b = bond_root[1] - bond_root[0]
 
     #time from bond to the wall
-    tau_bL = (Param_dict["L_qpc"] - Param_dict["bond_index"] - 2) / vg
+    tau_bL = (Param_dict["L_qpc"] - Param_dict["bond_index"] - 2)/ vg
     # total time
     tau_L = tau_0b + tau_b + tau_bL
 
     # time if there were no potential at bond
-    tau_free = Param_dict["L_qpc"] / vg
+    tau_free = Param_dict["L_qpc"]/ vg
 
     return tau_L, tau_free, tau_b, vg, x_av, bond_root
 
