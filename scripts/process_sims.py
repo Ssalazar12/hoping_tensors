@@ -35,7 +35,7 @@ data_dict = {'L_qpc': [], 'max_time': [], 'tsteps': [], 'bond_index': [],
              "last_density_max": [], "time_last_density_max": [], "bond_density_max": [], "min_purity": [],
              "max_VN_entropy": [],
              "entanglement_timeskip": [], "T_mean": [], "ddot0": [], "kick": [],  "theta_f": [], "phi_f": [],
-             "delta_phi": []}
+             "delta_phi": [], "dd_density_hit": []}
 
 file_list = os.listdir(data_route)
 
@@ -70,6 +70,12 @@ for i in range(0, len(file_list)):
     r_density_free = n_right[time_f_i]
     last_density_free = traject[-1][time_f_i]
 
+     # get the occupation of the dot at the time when the qpc reaches it
+    tau_to_bond = param_dict["bond_index"]/(2*J*np.sin(param_dict["k0"]))
+    tau_to_bond_index = find_nearest_index(times, tau_to_bond)
+    dd_density_hit = n_d2[tau_to_bond_index]
+
+
     # to estimate the error of how good the time at bond estimation is do a gaussian fit
     # As initial guess of the standard dev put FWHM
     initial_guess = [1, np.mean(n_bond), tau_b]
@@ -81,8 +87,8 @@ for i in range(0, len(file_list)):
     # get transmision probabilities from scattering analytics
     T0, T_tot = get_transmision_proba(param_dict, J)
     # average over the numerical transmision rate (n right)
+
     # start after the particle has crossed the bond until it hits the wall
-    tau_to_bond = param_dict["bond_index"]/(2*J*np.sin(param_dict["k0"]))
     start_time = find_nearest_index(times, tau_to_bond)
     T_mean = np.mean(n_right[start_time:])
 
@@ -101,10 +107,10 @@ for i in range(0, len(file_list)):
     tskip = param_dict["entropy_t_skip"]
 
     # get the phi at the end of the interaction with the QPC
-    times_coarse = times[:-tskip:tskip] # rtemember the coarse graining in bloch sphere
-    measure_end = find_nearest_index(times_coarse, tau_to_bond + tau_b)
+    times_coarse = np.linspace(0,max(times), len(dd_costheta)) # rtemember the coarse graining in bloch sphere
+    # deprecated: measure_end = find_nearest_index(times_coarse, tau_to_bond + tau_b)
     delta_phi = phi0 - dd_phi[-1].real
-
+   
     data_dict["vg"].append(vg)
     data_dict["time_at_bond"].append(tau_b)
 
@@ -145,6 +151,7 @@ for i in range(0, len(file_list)):
     data_dict["theta_f"].append(dd_theta[-1].real)
     data_dict["phi_f"].append(dd_phi[-1].real)
     data_dict["delta_phi"].append(delta_phi)
+    data_dict["dd_density_hit"].append(dd_density_hit.real)
 
 data_df = pd.DataFrame.from_dict(data_dict)
 

@@ -22,28 +22,29 @@ from qutip_tools import *
 # --------------------------------
 
 # location where the raw data is saved
-# data_route = "../data/sims/L=16/"
-data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=21/"
+data_route = "../data/sims/L=16/"
+# data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=21/"
 # it is important to have them as lists
 
-L_qpc_list = [21]  # lenth of the QPC chain
+
+L_qpc_list = [16]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [18] # maximum time
 tsteps_list = [400] # number of time steps
 bond_index_list = [7] #[int(L_qpc_list[0]/2)] # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
-band_width_list = [0.5, 2.0] # width of the gaussian wave packet
-K0_list = [np.pi/8, np.pi/6,np.pi/4, 5*np.pi/16, 6*np.pi/16, 7*np.pi/16 ,np.pi/2] # Initial velocity of the wavepacket
+band_width_list = [2.0] # width of the gaussian wave packet
+K0_list =[np.pi/7,np.pi/5,np.pi/4,np.pi/3,np.pi/2] #[0.6*np.pi/2 ,0.7*np.pi/2 ,0.8*np.pi/2, 0.85*np.pi/2 , 0.9*np.pi/2 ,0.95*np.pi/2] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.01, 0.05, 0.4, 0.5, 0.6, 0.7, 0.9 ,1.0] # hopping between quantum dots
-Omega_list = [0.0, 0.01, 0.05, 0.1 ,0.2, 0.3 , 0.4, 0.5, 0.7]  # coupling between dot 1 and QPC
-ddot0_list = ["fixed"] # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
+t_list = [0.1] #[0.05, 0.1, 0.2, 0.3, 0.4] # hopping between quantum dots
+Omega_list = [0.1] #[0.1 ,0.2, 0.3]  # coupling between dot 1 and QPC
+ddot0_list = ["fixed"] # can be first (loc in 1st site), second (loc in 2nd) , fixed (fixed by K0) or mixed. the interaction is placed in the second one
 # this is just to get the number of params for the combinations later
 Nparams = 12
 
 # --------------------------------
 # Functions 
-# --------------------------------
+# ---------------- ----------------
 
 def gen_gauss_init(l0, sigma, Nsites, k0=0):
     # creates a gaussian initial condition centerd on l0 with bandwidth sigma for Nsites
@@ -66,6 +67,20 @@ def get_DD_init_for_fixed_k(k_prime):
      
     alpha0 = np.cos( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
     beta0 = - 1j*np.sin( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
+                        
+    return alpha0, beta0
+
+def get_DD_init_for_mixed(k_prime):
+    # calculated the initial conditions of the DD such that, when the QPC hits the bond
+    # its state is the same as that of a DD initialized localized in the first site when 
+    # the QPC for that case hits the bond with an average momentum k0=pi/2
+    # k_prime: float. The momentum of the qpc particle
+    Tau_bond = bond_index/(2*J[0]*np.sin(k_prime))
+    Phi = 0
+    #Tau_bond = bond_index/(2*J[0])*(1/np.sin(k_prime) - 1)
+
+    alpha0 = np.sqrt(0.4)*np.cos(t*Tau_bond) + 1j*np.sqrt(0.6)*np.sin(t*Tau_bond)*np.exp(1j*Phi)
+    beta0 = -1j*np.sqrt(0.4)*np.sin(t*Tau_bond) - np.sqrt(0.6)*np.cos(t*Tau_bond)*np.exp(1j*Phi)
                         
     return alpha0, beta0
 
@@ -103,6 +118,9 @@ def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
         dot_init = [0.0, 1.0]
     elif DD0 == "fixed":
         a0, b0 = get_DD_init_for_fixed_k(Kinit)
+        dot_init = [a0,b0]
+    elif DD0 == "mixed":
+        a0, b0 = get_DD_init_for_mixed(Kinit)
         dot_init = [a0,b0]
     else:
         print("Invalid initial condition for the double dot")
@@ -249,7 +267,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     time_skip = 10 
     purity_list , entropy_list, costheta_list, sinphi_list, tskip = get_entanglement(result.states, L_qpc+2 ,tskip=time_skip)
 
-    # save results to hdf5 file
+    # save results to hdf5 file 
     file_name = "res_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}.hdf5".format(L_qpc, max_t, band_width, 
                                                                       K0, J_prime, t, Omega,ddot)
 
