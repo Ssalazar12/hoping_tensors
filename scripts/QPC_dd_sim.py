@@ -70,20 +70,6 @@ def get_DD_init_for_fixed_k(k_prime):
                         
     return alpha0, beta0
 
-def get_DD_init_for_mixed(k_prime):
-    # calculated the initial conditions of the DD such that, when the QPC hits the bond
-    # its state is the same as that of a DD initialized localized in the first site when 
-    # the QPC for that case hits the bond with an average momentum k0=pi/2
-    # k_prime: float. The momentum of the qpc particle
-    Tau_bond = bond_index/(2*J[0]*np.sin(k_prime))
-    Phi = 0
-    #Tau_bond = bond_index/(2*J[0])*(1/np.sin(k_prime) - 1)
-
-    alpha0 = np.sqrt(0.4)*np.cos(t*Tau_bond) + 1j*np.sqrt(0.6)*np.sin(t*Tau_bond)*np.exp(1j*Phi)
-    beta0 = -1j*np.sqrt(0.4)*np.sin(t*Tau_bond) - np.sqrt(0.6)*np.cos(t*Tau_bond)*np.exp(1j*Phi)
-                        
-    return alpha0, beta0
-
 
 def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
     # Combines the 1particle bassi of the QPC and the dot to get the full psi
