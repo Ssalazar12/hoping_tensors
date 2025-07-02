@@ -3,3 +3,4 @@
 {"rule":"SOME_OF_THE","sentence":"^\\QSection \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q introduces the main ideas behind weak measurements and discusses some of the existing literature surrounding their application to QPC's.\\E$"}
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QBey Ehrenfest's theorem, this corresponds\\E$"}
 {"rule":"EN_COMPOUNDS","sentence":"^\\QThis is due to our initial assumption of the pre-measurement occurring in a small time window.\\E$"}
+{"rule":"SENTENCE_WHITESPACE","sentence":"^\\Q\\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
