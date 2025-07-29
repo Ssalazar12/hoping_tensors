@@ -18,3 +18,8 @@ diagonalize
 diagonalized
 eigenenergies
 Rabi
+Perturbative
+perturbative
+degeneracies
+Eigenspectrum
+wavepacket

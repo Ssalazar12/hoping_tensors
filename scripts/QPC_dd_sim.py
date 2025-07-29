@@ -22,11 +22,12 @@ from qutip_tools import *
 # --------------------------------
 
 # location where the raw data is saved
-# data_route = "../data/sims/L=16/"
-data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=21/"
+data_route = "../data/sims/L=16/"
+# data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=21/"
 # it is important to have them as lists
 
-L_qpc_list = [21]  # lenth of the QPC chain
+
+L_qpc_list = [16]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [18] # maximum time
 tsteps_list = [400] # number of time steps
@@ -43,7 +44,7 @@ Nparams = 12
 
 # --------------------------------
 # Functions 
-# --------------------------------
+# ---------------- ----------------
 
 def gen_gauss_init(l0, sigma, Nsites, k0=0):
     # creates a gaussian initial condition centerd on l0 with bandwidth sigma for Nsites
@@ -103,6 +104,9 @@ def gen_QPC_dot_basis(L_QPC, Center_index, Band_w, Kinit, DD0):
         dot_init = [0.0, 1.0]
     elif DD0 == "fixed":
         a0, b0 = get_DD_init_for_fixed_k(Kinit)
+        dot_init = [a0,b0]
+    elif DD0 == "mixed":
+        a0, b0 = get_DD_init_for_mixed(Kinit)
         dot_init = [a0,b0]
     else:
         print("Invalid initial condition for the double dot")
@@ -249,7 +253,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
     time_skip = 10 
     purity_list , entropy_list, costheta_list, sinphi_list, tskip = get_entanglement(result.states, L_qpc+2 ,tskip=time_skip)
 
-    # save results to hdf5 file
+    # save results to hdf5 file 
     file_name = "res_L{}_maxtim{}_bw{}_k{:.4f}_jp{}_t{}_om{}_dd0{}.hdf5".format(L_qpc, max_t, band_width, 
                                                                       K0, J_prime, t, Omega,ddot)
 
