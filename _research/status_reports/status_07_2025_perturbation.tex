@@ -119,14 +119,15 @@ corresponding to the same ones from Eq.\eqref{eq:E2}. Here, it is important to p
 
 Now, working with Eq.\eqref{eq:psi_1} it is easier to understand what the aforementioned degeneracies mean. The first term, mixes momentum states within the same band and becomes degenerate towards the edges ($k\approx 0, \pi$) due to the cosine shape of the QPC energies. This term will \textit{not} contribute towards the hybridization of the bands. 
 
-On the other hand, the second term is more interesting. It mixes momentum states from different bands ($\nu$ and $\mu$), and becomes degenerate when the difference of between the QPC energies is equal to the band-gap, which can happen at several momenta. If $\nu = +$ the denominator blows up when $p=\pm \arccos(-t/J + \cos k)$ and for $\nu = -$ it happens when $p=\pm \arccos(t/J + \cos k)$. Furthermore, the dependence on the $\arccos$ imposes additional restrictions to the momenta that can cause a degeneracy. Since it is only defined for an argument between $-1$ and $1$, the only states that contribute are those that fulfill:
+On the other hand, the second term is more interesting. It mixes momentum states from different bands ($\nu$ and $\mu$), and becomes degenerate when the difference of between the QPC energies is equal to the band-gap, which can happen at several momenta. If $\nu = +$ the denominator blows up when $\cos p= -t/J + \cos k$ and for $\nu = -$ it happens when $\cos p= t/J + \cos k$. These expressions imposes additional restrictions on the momenta that induce degeneracies, since they only have solutions when the RHS is between $-1$ and $1$.
 
-\begin{tcolorbox}[title=Arccosine condition, colback=white, colframe=black]
+\begin{tcolorbox}[title=Degeneracy Condition, colback=white, colframe=black]
 Only $k$-momenta that fulfill
 \begin{align}\label{eq:arccos_condition}
-    -1 + \frac{t}{J} < \cos k < 1 - \frac{t}{J}.
+    & \text{For the symmetric band ($\nu = +$): } -1 \leq \frac{t}{J} + \cos{k} \leq 1 \\
+    & \text{For the anti-symmetric band ($\nu = -$): } -1 \leq -\frac{t}{J} + \cos{k} \leq 1
 \end{align}
-can keep the argument of $p=\pm \arccos(\pm t/J + \cos k)$ between $(-1,1)$. Thus, the corresponding degenerate $p$ will be a physical state.
+can contribute to the degeneracy, otherwise $\cos p= \pm t/J + \cos k$ has no solution.
 \end{tcolorbox}
 
 This condition shows that, at larger values of $t$, there will be less available states that can become degenerate and hybridize the two bands. For example, if $t/J\rightarrow 1$, then $|-1+t/J|\rightarrow 0$ and only $k\approx 0,  \pi$ will have a corresponding degenerate $p$, hence only states towards the band edges will mix.
@@ -136,12 +137,12 @@ In addition, from the second term it is inferred where is the expansion well-beh
     \Delta E(k) \approx k - (k - \delta) = \frac{\pi}{N+1},
 \end{align}
 so the condition to avoid degeneracies around $\pi/2$ is
-\begin{tcolorbox}[title=Non-degeneracy condition, colback=white, colframe=black]
+\begin{tcolorbox}[title=Band-Gap condition, colback=white, colframe=black]
+    The perturbative expansion \eqref{eq:psi_1} is well-behaved only when $2\epsilon_\nu \neq \Delta E(k)$. This is always true, when $t/J>1$ and near the middle of the band when
     For momenta near the middle of the band
 \begin{align}\label{eq:degen_condition}
-    \frac{t}{J}<\frac{\pi}{N+1}, \quad \text{ For $k\approx\pi/2$ }
+    \frac{t}{J}<\frac{\pi}{N+1}, \quad \text{ For $k\approx\pi/2$ }.
 \end{align}
-    guarantees that the perturbative series is well-behaved.
 \end{tcolorbox}
 
 On the other hand, if we expand $\Delta E(k)$ around $0$ or $\pi$ we obtain
