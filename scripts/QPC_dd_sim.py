@@ -22,22 +22,22 @@ from qutip_tools import *
 # --------------------------------
 
 # location where the raw data is saved
-data_route = "../data/sims/L=16/"
-# data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=21/"
+# data_route = "../data/sims/L=16/"
+data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/sims/L=21/"
 # it is important to have them as lists
 
 
-L_qpc_list = [16]  # lenth of the QPC chain
+L_qpc_list = [21]  # lenth of the QPC chain
 L_list = [L_qpc_list[0]+2] # QPC times double dot 
 max_t_list = [18] # maximum time
 tsteps_list = [400] # number of time steps
 bond_index_list = [7] #[int(L_qpc_list[0]/2)] # dangling bond between bond_index and bond_index+1
 centered_at_list = [0] # initial QPC position of wavepacket
 band_width_list = [2.0] # width of the gaussian wave packet
-K0_list = [ 0.7*np.pi/2 ,0.8*np.pi/2, 0.85*np.pi/2 , 0.9*np.pi/2 ,0.95*np.pi/2] # Initial velocity of the wavepacket
+K0_list = [0.12*np.pi , 0.17*np.pi, 0.25*np.pi, 0.31*np.pi, 0.38*np.pi, 0.44*np.pi, 0.5*np.pi] # Initial velocity of the wavepacket
 J_prime_list = [1.0] # contact to double dot
-t_list = [0.01, 0.05,0.1,0.2, 0.3 ,0.4, 0.5,] # hopping between quantum dots
-Omega_list = [0.0, 0.01, 0.05, 0.1 ,0.2, 0.3 , 0.4,]  # coupling between dot 1 and QPC
+t_list = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] # hopping between quantum dots
+Omega_list = [0.1, 0.3 ,0.5]  # coupling between dot 1 and QPC
 ddot0_list = ["fixed"] # can be first (loc in 1st site), second (loc in 2nd) or fixed (fixed by K0)
 # this is just to get the number of params for the combinations later
 Nparams = 12
