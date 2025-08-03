@@ -155,7 +155,6 @@ def get_entanglement(States, L ,tskip=5):
     state_arr = States[0::tskip]
     for ti in range(0,len(state_arr)):
         # DD reduced density matrix
-        # rho_DD = get_partial_trace(state_arr[ti], L)
         state_spa = state_arr[ti]
         state_spa.data = data.to(data.CSR, state_spa.data)
         rho = state_spa*state_spa.dag()
