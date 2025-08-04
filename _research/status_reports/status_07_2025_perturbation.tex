@@ -52,7 +52,7 @@ The eigenstates of $H_0$ are the tensor product $\ket{\phi^{(0)}_\nu (k)} = \ket
 
 \begin{tcolorbox}[title=QPC eigenstates, colback=white, colframe=black]
 \begin{align}
-    \bra{n}\ket{k} = \sqrt{\frac{1}{N+1}} \sin(n k) ,\quad & E(k) = -2J\cos(k), \quad k = \frac{n\pi}{N+1},\quad n= 1, 2,...N
+    \bra{n}\ket{k} = \sqrt{\frac{2}{N+1}} \sin(n k) ,\quad & E(k) = -2J\cos(k), \quad k = \frac{n\pi}{N+1},\quad n= 1, 2,...N
 \end{align}
 Here $\ket{n}$ is the position basis.
 \end{tcolorbox}
@@ -112,7 +112,7 @@ The first order corrections to the eigenstates
 \end{align} 
 are also simpler to calculate by separating it in three contributions
 \begin{align}\label{eq:psi_1}
-    \ket{\phi_\nu^{(1)} (k)} = & \frac{1}{(N+1)}\sum_{p\neq k} \ket{p}\otimes \left \{ \frac{ \xi(k,p)}{ -2J( \cos k - \cos p ) } \ket{\nu} + \overbrace{\frac{ \xi(k,p)^2}{ 2\epsilon_\nu -2J( \cos k - \cos p )} \ket{\mu}}^{\text{Band mixing term}} \right \} \nonumber \\ 
+    \ket{\phi_\nu^{(1)} (k)} = & \frac{1}{(N+1)}\sum_{p\neq k} \ket{p}\otimes \left \{ \frac{ \xi(k,p)}{ -2J( \cos k - \cos p ) } \ket{\nu} + \overbrace{\frac{ \xi(k,p)}{ 2\epsilon_\nu -2J( \cos k - \cos p )} \ket{\mu}}^{\text{Band mixing term}} \right \} \nonumber \\ 
     & + \frac{1}{(N+1)} \frac{\xi(k,k)}{2\epsilon_\nu} \ket{k}\otimes\ket{\mu},
 \end{align}
 corresponding to the same ones from Eq.\eqref{eq:E2}. Here, it is important to point out the convention of $\mu \neq \nu$ when it appears explicitly. This convention is held for the rest of this text.
