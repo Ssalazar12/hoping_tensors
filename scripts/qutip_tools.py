@@ -11,7 +11,7 @@ from scipy.interpolate import UnivariateSpline
 # HELPER FUNCTIONS FOr python project
 
 # ----------------------------------------------------
-# FOR DATA ANALYSIS
+#  DATA ANALYSIS
 # ----------------------------------------------------
 
 def find_nearest_index(array, value):
@@ -132,7 +132,7 @@ def get_transmision_proba(Param_dict, J):
     return T0, T_tot
 
 # ----------------------------------------------------
-# FOR CREATING HAMILTONIANS AND OPERATORS IN QUTIP
+#  CREATING HAMILTONIANS AND OPERATORS IN QUTIP
 # ----------------------------------------------------
 
 def get_qpc_H(op_list, Nsites, Nqpc,jcouple):
@@ -250,4 +250,42 @@ def create_lindblad_op(Nsites, operator_list ,gamma,collapse_type="number"):
             collapse_ops.append(np.sqrt(gamma)*operator_list[site_j])
     
     return collapse_ops, expect_ops
+
+
+# ------------------------------------------------------------------
+# Perturbation theory
+# ------------------------------------------------------------------
+
+def kth_diag_indices(a, k):
+    # negative numbers go below the diagonal, 0 is the main diagonal and positive nums go above
+    rows, cols = np.diag_indices_from(a)
+    if k < 0:
+        return rows[-k:], cols[:k]
+    elif k > 0:
+        return rows[:-k], cols[k:]
+    else:
+        return rows, cols
+    
+# Find index of the closest value
+def find_nearest(arr, target):
+    idx = np.abs(arr - target).argmin()
+    return arr[idx], idx
+
+def mag_sort(en_array, vec_array):
+    # sorts the energies and eigenvectors by energy magnitude
+    sort_idx = np.argsort(en_array)
+    en_array = en_array[sort_idx]
+    vec_array = vec_array[:,sort_idx]
+
+    return en_array, vec_array
+    
+
+def xhi(K,P, B):
+    # the matrix elements for perturbation
+    return np.sin(B*P+P)*np.sin(B*K) + np.sin(B*K+K)*np.sin(B*P)
+
+
+
+
+
 
