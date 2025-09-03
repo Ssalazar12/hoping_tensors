@@ -253,7 +253,7 @@ def create_lindblad_op(Nsites, operator_list ,gamma,collapse_type="number"):
 
 
 # ------------------------------------------------------------------
-# Perturbation theory
+# Numpy Perturbation theory and Exact diagonalizaiton
 # ------------------------------------------------------------------
 
 def kth_diag_indices(a, k):
@@ -285,7 +285,40 @@ def xhi(K,P, B):
     return np.sin(B*P+P)*np.sin(B*K) + np.sin(B*K+K)*np.sin(B*P)
 
 
+def sort_by_projection(energy_list,eigen_list, Proj):
+    # sorts the eigenvectors from numpy diagonalize into bands by their projection onto Proj
+    P_elements = []
+    # separate into bands accordin to their projection
+    for i in range(0,len(energy_list)):
+        # for plus states
+        ev = eigen_list[:,i]
+        ev_proj = np.matmul(Proj,ev)
+        # here we round off to nearest integer only for the separation
+        P_elements.append(round(np.dot(np.conj(ev), ev_proj)))
+        
+    P_elements = np.asarray(P_elements)
+    
+    # the symmetric states will be those with 1
+    p_sort_idx = np.argwhere(P_elements==1)[:,0]
+    
+    # the antisymmetric states will be those with 0
+    m_sort_idx = np.argwhere(P_elements==0)[:,0]
+
+    return m_sort_idx, p_sort_idx
 
 
-
+def sort_by_overlap_matrix(Energies, Free_eigenvecs ,Eigenvecs):
+    # sort the bands according to their overlap matrix 
+    # calculate the overlaps between the eigenvectors of H0 (Free_eigenvecs) and
+    # the interacting case H=H0+V (Eigenvecs)
+    
+    Sorted_indices = []
+    Over_matrix = np.zeros((len(Energies),len(Energies))) + 0j
+    for i in range(0,len(Energies)):
+        for j in range(0,len(Energies)):
+            overlap = (np.dot(Free_eigenvecs[:,i].conj(), Eigenvecs[:,j]))**2
+            Over_matrix[i,j] = overlap
+        # now in the current ith row grab the j index of the maximum overlap
+        Sorted_indices.append(np.argmax(Over_matrix[i,:]))
+    return Sorted_indices, Over_matrix
 
