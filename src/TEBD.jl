@@ -1,6 +1,6 @@
 module TEBD
 
-using ITensors
+using ITensors, ITensorMPS
 using Combinatorics
 using Memento
 using Distributions

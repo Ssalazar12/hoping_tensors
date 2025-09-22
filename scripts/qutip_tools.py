@@ -322,3 +322,19 @@ def sort_by_overlap_matrix(Energies, Free_eigenvecs ,Eigenvecs):
         Sorted_indices.append(np.argmax(Over_matrix[i,:]))
     return Sorted_indices, Over_matrix
 
+
+
+def get_file_names_on(param_list, route):
+    name_list = os.listdir(route)
+    try:
+        name_list.remove('.DS_Store')
+    except:
+        pass
+    # gets a list of the hdf5 file names with t dependent data depending on the values in param_list
+    for subs in param_list:
+        # getting strings with parameters that we want
+        name_list = list(filter(lambda x: subs in x, name_list))
+
+    return name_list
+
+
