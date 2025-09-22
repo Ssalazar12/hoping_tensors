@@ -24,6 +24,7 @@ def load_data(dir_route, file):
     # loading the simulation data. In addition. it makes sure to implement
     # THE TIME=INFINITY CUTOFF TO AVOID back reflections
     with h5py.File(dir_route + file, 'r') as res_h5:
+        # we ALWAYS set J=1
         J=1
         Param_dict = json.loads(res_h5['metadata/parameters'][()])
         # time range
@@ -73,6 +74,42 @@ def load_data(dir_route, file):
     res_h5.close()
 
     return Param_dict, Times, N_bond, N_left, N_right, N_d1, N_d2, Trajectories, VN_entropy, Purity, DD_costheta, DD_sinphi
+
+
+def load_MPS(dir_route, file):
+    # loads the data for an MPS evolution
+
+    with h5py.File(dir_route + file, 'r') as res_h5:
+        # we ALWAYS set J=1
+        J=1
+        # load parameters
+        Param_dict = json.loads(res_h5['metadata/parameters'][()])
+    
+        # time range
+        Times = res_h5["results/time_list"][:]
+    
+        # Here we definide t=infty when the free QPC particle would hit the bond
+        # which is calculated using Ehrenfest Therem
+        vg = 2 * J * np.sin(Param_dict["k0"])
+        # effective mass in tightbinding
+        tau_free = Param_dict["L"]/ vg
+        print(tau_free, Param_dict["k0"])
+        last_t_index = find_nearest_index(Times, tau_free)
+        last_t_index_full = last_t_index # save it to use for later
+    
+        # load qpc data
+        Occupations = res_h5["results/occupations"][:last_t_index]
+        Bond_dim = res_h5["results/bond_dimensions"][:last_t_index]
+        Times = res_h5["results/time_list"][:last_t_index]
+        Entropies = res_h5["results/entropies"][:last_t_index]
+        # Quantities depending on the reduced density matrix are coarse grained in time
+        # therefore for those the final time has to be chosen as the closest one they have
+        last_t_index = find_nearest_index(Times[0::2], tau_free)
+        qubit_rho = res_h5["results/qubit_density_matrices"][:last_t_index]
+    
+    res_h5.close()
+
+    return Param_dict, Times, Occupations, Bond_dim, Entropies, qubit_rho
 
 
 def get_timescale_data(Param_dict, Traject, Times, N_bond):
