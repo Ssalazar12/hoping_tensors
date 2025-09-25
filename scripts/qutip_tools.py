@@ -102,9 +102,9 @@ def load_MPS(dir_route, file):
         Bond_dim = res_h5["results/bond_dimensions"][:last_t_index]
         Times = res_h5["results/time_list"][:last_t_index]
         Entropies = res_h5["results/entropies"][:last_t_index]
-        # Quantities depending on the reduced density matrix are coarse grained in time
+        # Quantities depending on the reduced density matrix are coarse grained in time?
         # therefore for those the final time has to be chosen as the closest one they have
-        last_t_index = find_nearest_index(Times[0::2], tau_free)
+        #last_t_index = find_nearest_index(Times[0::2], tau_free)
         qubit_rho = res_h5["results/qubit_density_matrices"][:last_t_index]
     
     res_h5.close()
