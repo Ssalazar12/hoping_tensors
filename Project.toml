@@ -20,4 +20,4 @@ Strided = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"
 
 [compat]
 DrWatson = "2.18.0"
-julia = "1.11.6"
+julia = "1.11.5"

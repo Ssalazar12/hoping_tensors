@@ -34,7 +34,6 @@ def load_data(dir_route, file):
         vg = 2 * J * np.sin(Param_dict["k0"])
         # effective mass in tightbinding
         tau_free = Param_dict["L_qpc"]/ vg
-        print(tau_free, Param_dict["k0"])
         last_t_index = find_nearest_index(Times, tau_free)
         last_t_index_full = last_t_index # save it to use for later
 
@@ -61,7 +60,7 @@ def load_data(dir_route, file):
 
         # when theta = 0 phi becomes undefined because it could take any values
         try:
-            print("phi is undefined using next values")
+            # print("phi is undefined using next values")
             nan_index = np.argwhere(np.isnan(DD_sinphi))[0][0]
             # replace the nan value with the next numerical val
             DD_sinphi[nan_index] = DD_sinphi[nan_index + 1]    
@@ -93,7 +92,6 @@ def load_MPS(dir_route, file):
         vg = 2 * J * np.sin(Param_dict["k0"])
         # effective mass in tightbinding
         tau_free = Param_dict["L"]/ vg
-        print(tau_free, Param_dict["k0"])
         last_t_index = find_nearest_index(Times, tau_free)
         last_t_index_full = last_t_index # save it to use for later
     
