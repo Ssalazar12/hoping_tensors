@@ -23,12 +23,12 @@ Strided.disable_threads()
 L_list = [21]
 J_list  = [1.0] # qpc hopping
 t_list  = [0.05,0.1, 0.3, 0.8] # 0.1 0.3, 0.8 qubit hopping
-Ω_list  = [0.0,0.1, 0.5, 0.7] # interaction 0.0, 0.1 , 0.7
+Ω_list  = [0.7] # interaction 0.0, 0.1 , 9.5, 0.7
 spread_list  = [2.0] # spread of the gaussian wavepacket
 K0_list  = [pi/2] # group velocity of wavepacket
 X0_list  = [0] # initial position of the wavepacket
 Bindex_list  = [8] # round(Int64, L/2) # bond index has to be even
-t_step_list  = [0.1, 0.05] # 0.05
+t_step_list  = [0.01] # 0.1 0.05
 ttotal_list  = [18] # MUST be and odd integer since we only get reduced density matrix at half the steps
 qinit_list  = ["free"] # "fixed"
 evol_type_list  = ["TEBD","TDVP"] # TDVP TEBD
@@ -41,30 +41,6 @@ cutoff_exponent_list  = [-18] # -18 -20
 parameter_list = [L_list, J_list,t_list, Ω_list, spread_list, K0_list, X0_list, Bindex_list,
 				  t_step_list, ttotal_list, qinit_list, evol_type_list, cutoff_exponent_list, 
 				  θ_list, ϕ_list]
-
-"""L = 21
-J = 1.0 # qpc hopping
-t = 0.3 # 0.1 0.3, 0.8 qubit hopping
-Ω = 0.5 # interaction 0.0, 0.1 , 0.8
-spread = 2.0 # spread of the gaussian wavepacket
-K0 = pi/2 # group velocity of wavepacket
-X0 = 0 # initial position of the wavepacket
-Bindex = 8 # round(Int64, L/2) # bond index has to be even
-t_step = 0.1 # 0.05
-ttotal = 18 # MUST be and odd integer since we only get reduced density matrix at half the steps
-qinit = "free" # "fixed"
-evol_type = "TEBD" # TDVP TEBD
-
-cutoff_exponent = -18 # -18 -20
-cutoff = 10.0^cutoff_exponent
-
-# creates the initial supperposition for the qubit
-θ = pi
-ϕ = -pi/2
-β0 = cos(0.5*θ) 
-β1 = sin(0.5*θ)*exp(1im * ϕ)
-"""
-
 
 # ------------------------
 # FUNCTIONS
