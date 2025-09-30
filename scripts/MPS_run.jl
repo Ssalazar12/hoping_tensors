@@ -19,20 +19,19 @@ Strided.disable_threads()
 # PARAMETERS
 # ------------------------
 
-
 L_list = [21]
 J_list  = [1.0] # qpc hopping
 t_list  = [0.05,0.1, 0.3, 0.8] # 0.1 0.3, 0.8 qubit hopping
-Ω_list  = [0.7] # interaction 0.0, 0.1 , 9.5, 0.7
+Ω_list  = [0.0, 0.1 , 0.5, 0.7] # interaction 0.0, 0.1 , 0.5, 0.7
 spread_list  = [2.0] # spread of the gaussian wavepacket
 K0_list  = [pi/2] # group velocity of wavepacket
 X0_list  = [0] # initial position of the wavepacket
 Bindex_list  = [8] # round(Int64, L/2) # bond index has to be even
-t_step_list  = [0.01] # 0.1 0.05
+t_step_list  = [0.05] # 0.1 0.05
 ttotal_list  = [18] # MUST be and odd integer since we only get reduced density matrix at half the steps
 qinit_list  = ["free"] # "fixed"
-evol_type_list  = ["TEBD","TDVP"] # TDVP TEBD
-cutoff_exponent_list  = [-18] # -18 -20
+evol_type_list  = ["TEBD2","TDVP"] # TDVP TEBD
+cutoff_exponent_list  = [-20] # -18 -20
 # creates the initial supperposition for the qubit
 θ_list  = [pi]
 ϕ_list  = [-pi/2]
@@ -42,47 +41,9 @@ parameter_list = [L_list, J_list,t_list, Ω_list, spread_list, K0_list, X0_list,
 				  t_step_list, ttotal_list, qinit_list, evol_type_list, cutoff_exponent_list, 
 				  θ_list, ϕ_list]
 
-# ------------------------
+# --------------------------
 # FUNCTIONS
-# ------------------------
-
-function build_tebd2_gates(Sites,J,t, Ω, B, Δτ)
-    ChainL = length(Sites) - 2
-    # build the gates for a single tebd2 step
-    # Sites: MPS site object for fermionic sites
-    # J,t, Ω, B, Δτ: Floats representing QPC hoppin, qubit hopping, Interaction
-    # Bond index and time interval respectively
-    gates = ITensor[]
-    
-    # create the QPC gates
-    for j in 1:(ChainL-1)
-        s1 = Sites[j]
-        s2 = Sites[j+1] 
-        h0 = -J*(op("cdag",s1)*op("c",s2) + op("cdag",s2)*op("c",s1) )
-        # time evolution operator
-        Gj = exp(-im * Δτ/2 * h0)
-        push!(gates, Gj)
-    end
-    # create the qubit gate
-    s1 = Sites[end-1]
-    s2 = Sites[end]
-    h0 = -t*(op("cdag",s1)*op("c",s2) + op("cdag",s2)*op("c",s1) )
-    Gj = exp(-im * Δτ/2 * h0)
-    push!(gates, Gj)
-    
-    # create the interaction gate
-    s1 = Sites[end-1]
-    s2 = Sites[B-1] 
-    s3 = Sites[B] 
-    hint = Ω*op("N",s1)*( op("cdag",s2)*op("c",s3) + op("cdag",s3)*op("c",s2) )
-    Gj = exp(-im * Δτ/2 * hint)
-    
-    push!(gates, Gj)
-    # reverse the order for the TEBD2 version
-    append!(gates, reverse(gates))
-    
-    return gates
-end
+# --------------------------
 
 function entangement_S(ψ, b)
     # b: index where we do the bipartition
@@ -153,7 +114,6 @@ function save_results(file_name, Param_dict, occupations_lin, bond_dimensions,
     close(fid)
     
 end
-
 
 function PartialTrace(W::MPO, l::Int, r::Int)
     # from https://itensor.discourse.group/t/how-to-ensure-partial-trace-of-an-mpo-returns-an-mpo/1931
@@ -238,6 +198,52 @@ function build_tdvp_MPO(Sites,J,t, Ω, B)
     return MPO(h0,Sites)
 end
 
+function create_two_site_gates(coef_list, Sites, site_indices, Δτ)
+    # generates the two site hopping gate with coef_list as the couplings
+    gates = ITensor[]
+    
+    # create the QPC gates
+    for j in site_indices
+        s1 = Sites[j]
+        s2 = Sites[j+1] 
+        h0 = -coef_list[j]*(op("cdag",s1)*op("c",s2) + op("cdag",s2)*op("c",s1) )
+        # time evolution operator
+        Gj = exp(-1im * Δτ * h0)
+        push!(gates, Gj)
+    end
+    return gates
+end
+
+function create_interaction_gate(Sites,Δτ,Ω, B)
+     # create the interaction gate
+    s1 = Sites[end-1]
+    s2 = Sites[B+1] 
+    s3 = Sites[B] 
+    hint = Ω*op("N",s1)*( op("cdag",s2)*op("c",s3) + op("cdag",s3)*op("c",s2) )
+    Gj = exp(-im * Δτ * hint)
+    return Gj
+    
+end
+
+function TEBD2_sweep(L, J, t, Ω, B , sites,Δτ)
+    coupling_list = zeros(L+1)
+    coupling_list[1:L-1] .= J
+    coupling_list[L] = 0
+    coupling_list[L+1] = t 
+    
+    odd_site_numbers = 1:2:length(sites) - 1 
+    odd_gates = create_two_site_gates(coupling_list, sites, odd_site_numbers, Δτ)
+    
+    even_site_numbers = 2:2:length(sites) - 1 
+    even_gates = create_two_site_gates(coupling_list, sites, even_site_numbers, 0.5*Δτ)
+    
+    int_gate = create_interaction_gate(sites,Δτ, Ω, B)
+    
+    gate_sweep = [even_gates;int_gate; odd_gates; even_gates];
+
+    return gate_sweep
+end
+
 
 # ------------------------
 # MAIN
@@ -256,12 +262,12 @@ for iter_index in 1:length(parameter_iterator)
 	L = current_set[1]
 	J = current_set[2]
 	t = current_set[3] 
-	Ω = current_set[4] # interaction 0.0, 0.1 , 0.8
+	Ω = current_set[4] # interaction 
 	spread = current_set[5] # spread of the gaussian wavepacket
 	K0 = current_set[6]# group velocity of wavepacket
 	X0 = current_set[7] # initial position of the wavepacket
 	Bindex = current_set[8] # round(Int64, L/2) # bond index has to be even
-	t_step = current_set[9] # 0.05
+	t_step = current_set[9] # 
 	ttotal = current_set[10] # MUST be and odd integer since we only get reduced density matrix at half the steps
 	qinit = current_set[11] # "fixed"
 	evol_type = current_set[12]# TDVP TEBD
@@ -291,7 +297,7 @@ for iter_index in 1:length(parameter_iterator)
 	# now assign the probability to each basis state and sum 
 	psi0 = sum(init_probas .* basis_vecs);
 
-	TEBD_gates = build_tebd2_gates(s,J,t, Ω, Bindex, t_step);
+	TEBD2_gates = TEBD2_sweep(L, J, t, Ω, Bindex, s, t_step);
 	H_MPO = build_tdvp_MPO(s,J,t, Ω, Bindex)
 
 	# initialize containers
@@ -307,7 +313,7 @@ for iter_index in 1:length(parameter_iterator)
 	psit = deepcopy(psi0)
 	dummy_counter = 1
 
-	if evol_type=="TEBD"
+	if evol_type=="TEBD2"
 	    println("Evolving with TEBD...")
 	elseif evol_type=="TDVP"
 	    println("Evolving with TDVP...")
@@ -334,8 +340,8 @@ for iter_index in 1:length(parameter_iterator)
 	    density_matrices[:,:,dummy_counter] = ρmat
 	    
 	    # update the current state to the next time step
-	    if evol_type=="TEBD"
-	        psit = apply(TEBD_gates, psit; cutoff) 
+	    if evol_type=="TEBD2"
+	        psit = apply(TEBD2_gates, psit; cutoff) 
 	        
 	    elseif evol_type=="TDVP"
 	        psit =  tdvp(H_MPO,-1im*t_step, psit, cutoff=cutoff,mindim=3, reverse_step=true)
