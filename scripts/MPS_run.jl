@@ -21,13 +21,13 @@ Strided.disable_threads()
 
 L_list = [21]
 J_list  = [1.0] # qpc hopping
-t_list  = [0.05,0.1, 0.3, 0.8] # 0.1 0.3, 0.8 qubit hopping
-Ω_list  = [0.0, 0.1 , 0.5, 0.7] # interaction 0.0, 0.1 , 0.5, 0.7
+t_list  = [0.05,0.1, 0.3, 0.8 ] # 0.05,0.1, 0.3, 0.8 qubit hopping
+Ω_list  = [0.1 , 0.5, 0.7] # interaction 0.0, 0.1 , 0.5, 0.7
 spread_list  = [2.0] # spread of the gaussian wavepacket
 K0_list  = [pi/2] # group velocity of wavepacket
-X0_list  = [0] # initial position of the wavepacket
+X0_list  = [1] # initial position of the wavepacket
 Bindex_list  = [8] # round(Int64, L/2) # bond index has to be even
-t_step_list  = [0.05] # 0.1 0.05
+t_step_list  = [0.025] # 0.1 0.05
 ttotal_list  = [18] # MUST be and odd integer since we only get reduced density matrix at half the steps
 qinit_list  = ["free"] # "fixed"
 evol_type_list  = ["TEBD2","TDVP"] # TDVP TEBD
@@ -92,11 +92,6 @@ function save_results(file_name, Param_dict, occupations_lin, bond_dimensions,
         create_group(fid, "metadata")
         meta = fid["metadata"]
     
-        """
-        for (k, v) in Param_dict
-                meta[k] = v  # save each entry under its key
-        end
-        """
         # seriealized dictionary 
         json_str = JSON3.write(Param_dict)
     
@@ -192,8 +187,8 @@ function build_tdvp_MPO(Sites,J,t, Ω, B)
     h0 += -t, "Cdag", ChainL+2 , "C", ChainL+1
 
     # add interaction
-    h0 +=  Ω, "N", ChainL+1 , "Cdag", B-1 , "C", B
-    h0 += Ω, "N", ChainL+1 , "Cdag", B , "C", B-1
+    h0 +=  Ω, "N", ChainL+1 , "Cdag", B+1 , "C", B
+    h0 += Ω, "N", ChainL+1 , "Cdag", B , "C", B+1
     
     return MPO(h0,Sites)
 end
@@ -344,7 +339,7 @@ for iter_index in 1:length(parameter_iterator)
 	        psit = apply(TEBD2_gates, psit; cutoff) 
 	        
 	    elseif evol_type=="TDVP"
-	        psit =  tdvp(H_MPO,-1im*t_step, psit, cutoff=cutoff,mindim=3, reverse_step=true)
+	        psit =  tdvp(H_MPO,-1im*t_step, psit, cutoff=cutoff,mindim=4, reverse_step=true)
 	    else
 	        println("Unknown evolution type")
 	    end
