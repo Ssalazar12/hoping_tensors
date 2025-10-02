@@ -19,18 +19,18 @@ Strided.disable_threads()
 # PARAMETERS
 # ------------------------
 
-L_list = [21]
+L_list = [100]
 J_list  = [1.0] # qpc hopping
-t_list  = [0.05,0.1, 0.3, 0.8 ] # 0.05,0.1, 0.3, 0.8 qubit hopping
-Ω_list  = [0.1 , 0.5, 0.7] # interaction 0.0, 0.1 , 0.5, 0.7
-spread_list  = [2.0] # spread of the gaussian wavepacket
+t_list  = [0.05, 0.3] # 0.05,0.1, 0.3, 0.8 qubit hopping
+Ω_list  = [0.5] # interaction 0.0, 0.1 , 0.5, 0.7
+spread_list  = [6.0] # spread of the gaussian wavepacket
 K0_list  = [pi/2] # group velocity of wavepacket
-X0_list  = [1] # initial position of the wavepacket
-Bindex_list  = [8] # round(Int64, L/2) # bond index has to be even
-t_step_list  = [0.025] # 0.1 0.05
-ttotal_list  = [18] # MUST be and odd integer since we only get reduced density matrix at half the steps
+X0_list  = [20] # 1 initial position of the wavepacket
+Bindex_list  = ["half"] # can also be "half" to put in round(Int64, L/2) , 8 for exact comp
+t_step_list  = [0.1] # 0.1 0.05
+ttotal_list  = ["fixed"] # can be set to fixed so it is equal to hit time of free particle
 qinit_list  = ["free"] # "fixed"
-evol_type_list  = ["TEBD2","TDVP"] # TDVP TEBD
+evol_type_list  = ["TEBD2", "TDVP"] # TDVP TEBD2
 cutoff_exponent_list  = [-20] # -18 -20
 # creates the initial supperposition for the qubit
 θ_list  = [pi]
@@ -257,15 +257,27 @@ for iter_index in 1:length(parameter_iterator)
 	L = current_set[1]
 	J = current_set[2]
 	t = current_set[3] 
-	Ω = current_set[4] # interaction 
-	spread = current_set[5] # spread of the gaussian wavepacket
-	K0 = current_set[6]# group velocity of wavepacket
-	X0 = current_set[7] # initial position of the wavepacket
-	Bindex = current_set[8] # round(Int64, L/2) # bond index has to be even
-	t_step = current_set[9] # 
-	ttotal = current_set[10] # MUST be and odd integer since we only get reduced density matrix at half the steps
-	qinit = current_set[11] # "fixed"
-	evol_type = current_set[12]# TDVP TEBD
+	Ω = current_set[4] 
+	spread = current_set[5] 
+	K0 = current_set[6] 
+	X0 = current_set[7] 
+
+    if current_set[8]=="half"
+        Bindex = round(Int64, L/2)
+    else
+	   Bindex = current_set[8] 
+    end
+
+	t_step = current_set[9] 
+
+    if current_set[10]=="fixed"
+        ttotal = L/(2*J*sin(K0))
+    else
+       ttotal = current_set[10] 
+    end
+
+	qinit = current_set[11] 
+	evol_type = current_set[12]
 
 	cutoff_exponent = current_set[13]
 	cutoff = 10.0^cutoff_exponent
@@ -356,7 +368,9 @@ for iter_index in 1:length(parameter_iterator)
 
 	end
 
-	str_file_name = "/MPS/L=$L/$(evol_type)_L$(L)_J$(J)_t$(t)_om$(Ω)_Del$(spread)_k$(k0_round)_bindex$(Bindex)_maxtau$(ttotal)_tstep$(t_step)_cutoff$(cutoff_exponent)_$(qinit)_theta$(θ_round)_phi$(ϕ_round).h5"
+	str_file_name = "/MPS/L=$L/$(evol_type)_L$(L)_J$(J)_t$(t)_om$(Ω)_Del$(spread)_xo$(X0)_k$(k0_round)_bindex$(Bindex)_maxtau$(ttotal)_tstep$(t_step)_cutoff$(cutoff_exponent)_$(qinit)_theta$(θ_round)_phi$(ϕ_round).h5"
+    #str_file_name = "/MPS/L_sweep/$(evol_type)_L$(L)_J$(J)_t$(t)_om$(Ω)_Del$(spread)_k$(k0_round)_bindex$(Bindex)_maxtau$(ttotal)_tstep$(t_step)_cutoff$(cutoff_exponent)_$(qinit)_theta$(θ_round)_phi$(ϕ_round).h5"
+    
 	param_dict = Dict("type"=>evol_type,"L"=>L, "J"=>J, "t" =>t, "Omega" =>Ω, "spread" =>spread, "k0" =>K0,
 	                    "x0" =>X0, "bond_index" =>Bindex, "time_step" =>t_step, "max_time" =>ttotal, "cutoff" =>cutoff,
 	                    "qubit_theta" =>θ, "qubit_phi" => ϕ, "evol_type" =>evol_type, "qinit" =>qinit, 
