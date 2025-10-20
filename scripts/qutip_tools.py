@@ -109,6 +109,29 @@ def load_MPS(dir_route, file):
 
     return Param_dict, Times, Occupations, Bond_dim, Entropies, qubit_rho
 
+def load_exact_diag(dir_route, file):
+    # loads the data from the new_exact diag algorithm not the one from qutip
+    with h5py.File(dir_route+file, 'r') as res_h5:
+        Param_dict = json.loads(res_h5['metadata/parameters'][()])
+        J=1
+        # Here we definide t=infty when the free QPC particle would hit the bond
+        # which is calculated using Ehrenfest Therem
+        Vg = 2 * J* np.sin(Param_dict["K0"])
+        tau_free = np.asarray(Param_dict["L_qpc"])/ Vg
+        # truncate to the time the free particle hits the far wall
+        Times = res_h5["results/time"][:]
+
+        last_t_index = find_nearest_index(Times, tau_free)
+        Times = Times[:last_t_index]
+        Occupations = res_h5["results/trajectories"][:,:last_t_index]
+        D0_density = res_h5["results/d0_density"][:last_t_index]
+        Qubit_rho = res_h5["results/qubit_rho"][:last_t_index]
+        Entropy = res_h5["results/Entropy"][:last_t_index]
+        
+    res_h5.close()
+
+    return Param_dict, Times, Occupations, D0_density, Qubit_rho, Entropy
+
 
 def get_timescale_data(Param_dict, Traject, Times, N_bond):
     # calculates the quantities relevant to the estimation of the hitting time
