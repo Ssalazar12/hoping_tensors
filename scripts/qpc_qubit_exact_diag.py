@@ -26,21 +26,21 @@ from tqdm import tqdm
 # GLOBAL VARIABLES
 # ---------------------------------------------------
 
-ll = 40
+ll = 21
 L_qpc_list = [ll]
 Omega_list = [0.0, 0.1, 0.3, 0.5 ,0.7]
 t_list = [0.01, 0.03, 0.05, 0.07, 0.09, 0.1, 0.2, 0.3,0.4, 0.6, 0.8 ,1.0, 1.5, 2.0]
 J_prime_list  = [1]
-bond_index_list  = [int(ll/2)]
+bond_index_list  = [7] #[int(ll/2)]
 K0_list  = [0.3*np.pi/2, 0.2*np.pi/2, 0.1*np.pi/2] # np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2 , 0.5*np.pi/2,  0.4*np.pi/2
-centered_at_list  = [5] # initial position of wavepacket
-Delta_list  = [4.0] # spread of wavepacket
-maxt_time_list  = [70]
+centered_at_list  = [0] # initial position of wavepacket
+Delta_list  = [2.0] # spread of wavepacket
+maxt_time_list  = [20]
 N_timepoints_list  = [500]
 ddot_list = ["momentum"] # can be "free" or "momentum" which is set by k0 based on af, bf
 phi_list = [0] #np.pi/2 # initial phase of the qubit
 # if its "free" af, bf will be the initial conditions
-af_list = [np.sqrt(0.8)] # np.sqrt(0.8) probability of qubit 0 state
+af_list = [np.sqrt(0.9)] # np.sqrt(0.8) probability of qubit 0 state
 
 # this is just to get the number of params for the combinations later
 Nparams = 13
