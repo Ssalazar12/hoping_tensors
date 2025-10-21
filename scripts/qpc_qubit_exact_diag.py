@@ -215,7 +215,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	J[bond_index] = J_prime  
 	bf = np.sqrt(1-af**2) # probability of qubit 1 state
 	x = np.arange(0,L_qpc)  # latice sites
-	data_route = "../data/exact_diag_new/L={}/".format(L_qpc)
+	data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(L_qpc)
 
 	print("calculating for: ")
 	print("")
