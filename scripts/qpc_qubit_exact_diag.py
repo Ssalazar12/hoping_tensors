@@ -40,10 +40,12 @@ N_timepoints_list  = [500]
 ddot_list = ["momentum"] # can be "free" or "momentum" which is set by k0 based on af, bf
 phi_list = [0] #np.pi/2 # initial phase of the qubit
 # if its "free" af, bf will be the initial conditions
-af_list = [np.sqrt(0.9)] # np.sqrt(0.8) probability of qubit 0 state
+af_list = [np.sqrt(1.0)] # np.sqrt(0.8) probability of qubit 0 state
 
 # this is just to get the number of params for the combinations later
 Nparams = 13
+# data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(ll)
+data_route = "../data/exact_diag_new/L={}/".format(ll)
 
 # ---------------------------------------------------
 # FUNCTIONS
@@ -214,7 +216,6 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	J[bond_index] = J_prime  
 	bf = np.sqrt(1-af**2) # probability of qubit 1 state
 	x = np.arange(0,L_qpc)  # latice sites
-	data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(L_qpc)
 
 	print("calculating for: ")
 	print("")
@@ -305,11 +306,12 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	param_dict = {"L_qpc": L_qpc, "Omega": Omega, "t":t ,"J":J[0] ,"Jp": J_prime, "bond_index" : bond_index, 
 	              "K0": K0, "X0":centered_at, "Spread":Delta, "maxt_time": maxt_time, 
 	              "del_tau":time_range[1]-time_range[0], "qubit_init":ddot,  "Re_qubit_0":np.real(a0), 
-	              "Im_qubit_0":np.imag(a0), "Re_qubit_1":np.real(b0), "Im_qubit_1":np.imag(b0), "phi":phi }
+	              "Im_qubit_0":np.imag(a0), "Re_qubit_1":np.real(b0), "Im_qubit_1":np.imag(b0), "phi":phi,
+	              "alfabond": af }
 
-	file_name = "exact_L{}_J{}_t{}_om{}_Del{}_xo{}_k{:.4f}_bindex{}_maxtau{:.3f}_tstep{:.3f}_alpha{:.3f}_beta{:.3f}_phi{}.h5".format(
+	file_name = "exact_L{}_J{}_t{}_om{}_Del{}_xo{}_k{:.4f}_bindex{}_maxtau{:.3f}_tstep{:.3f}_alpha{:.3f}_beta{:.3f}_phi{}_alpha_bond{:.3f}.h5".format(
 	                                    L_qpc, J_prime, t, Omega, Delta,centered_at , K0, bond_index,maxt_time,
-	                                    time_range[1]-time_range[0], np.abs(a0)**2, np.abs(b0)**2, phi)
+	                                    time_range[1]-time_range[0], np.abs(a0)**2, np.abs(b0)**2, phi, af)
 
 	results_file = h5py.File(data_route+file_name,'w')
 	# save parameters and maybe other meta data
