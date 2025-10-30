@@ -26,21 +26,22 @@ from tqdm import tqdm
 # GLOBAL VARIABLES
 # ---------------------------------------------------
 
-ll = 21
+ll = 50
 L_qpc_list = [ll]
-Omega_list = [0.0, 0.1, 0.3, 0.5 ,0.7]
-t_list = [0.01, 0.03, 0.05, 0.07, 0.09, 0.1, 0.2, 0.3,0.4, 0.6, 0.8 ,1.0, 1.5, 2.0]
+Omega_list = [0.0, 0.1, 0.3, 0.5]
+t_list = [0.001, 0.01, 0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4 ,0.5 ,0.6, 0.8 ,1.0, 2.0]
 J_prime_list  = [1]
-bond_index_list  = [7] #[int(ll/2)]
-K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2 , 0.5*np.pi/2,  0.4*np.pi/2]
-centered_at_list  = [0] # initial position of wavepacket
-Delta_list  = [2.0] # spread of wavepacket
-maxt_time_list  = [20]
-N_timepoints_list  = [500]
-ddot_list = ["momentum"] # can be "free" or "momentum" which is set by k0 based on af, bf
+bond_index_list  = [int(ll/2)] # 7
+K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2 , 0.5*np.pi/2,  
+			0.4*np.pi/2,  0.3*np.pi/2]
+centered_at_list  = [8] # initial position of wavepacket
+Delta_list  = [6.0] # spread of wavepacket
+maxt_time_list  = [60] # 18 fixed is set by the qpc velocity
+N_timepoints_list  = [400]
+ddot_list = ["old"] # can be "free", "momentum" OR "fixed" "old" (orbit) which is set by k0 based on af
 phi_list = [0] #np.pi/2 # initial phase of the qubit
 # if its "free" af, bf will be the initial conditions
-af_list = [np.sqrt(1.0)] # np.sqrt(0.8) probability of qubit 0 state
+af_list = [np.sqrt(0.2)] # np.sqrt(0.8) probability of qubit 0 state
 
 # this is just to get the number of params for the combinations later
 Nparams = 13
@@ -118,6 +119,28 @@ def get_DD_init_for_momentum(k_prime, alphaf, betaf, ϕ):
     # dont forget the normalization and other factors
     return α0, β0  
 
+def get_DD_init_for_fixed_orbit(k_prime,θf,ϕ):
+	# calculated the initial conditions of the DD such that, when the QPC hits the bond
+	# its state is the same given by thetaf and follows an orbit between 0 a 1 with fixed phi
+    # Here we achieve this by shfiting time appropriately
+	# k_prime: float. The momentum of the qpc particle
+
+    τ0t = np.arccos(θf) - t*bond_index/(2*J[0]*np.sin(k_prime))
+    alpha0 = np.cos(-τ0t)
+    beta0 = -1j*np.sin(-τ0t)*np.exp(1j*ϕ)                   
+    return alpha0, beta0
+
+def get_DD_init_for_fixed_k(k_prime):
+    # calculated the initial conditions of the DD such that, when the QPC hits the bond
+    # its state is the same as that of a DD initialized localized in the first site when 
+    # the QPC for that case hits the bond with an average momentum k0=pi/2
+    # k_prime: float. The momentum of the qpc particle
+     
+    alpha0 = np.cos( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
+    beta0 = - 1j*np.sin( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
+                        
+    return beta0, alpha0
+
 
 def schmidt_qubit_qpc(c_eigs):
     # calculates the schmidt decomposition between the QPC and qubit for some stae
@@ -157,6 +180,7 @@ def get_qubit_occupations(Psi):
     ketbra = np.outer([1,0], np.conj([1,0]))
     # tensor with the qubit identity
     Nj_op = np.kron(np.eye(L_qpc), ketbra)
+
     return np.vdot(Psi, Nj_op @ Psi).real
 
 
@@ -178,7 +202,7 @@ def get_reduced_density_matrix(Psi,NN):
     n = (NN-2) # QPC sites
     m = 2 # Double dot sites
     # get density matrix as a sparse array
-    ρ = np.kron(Psi, np.conj(Psi.T))
+    ρ = np.outer(Psi, np.conj(Psi))
     # trace out QPC sites and return reduced rho for DD as Quobject
     return np.trace(ρ.reshape(n,m,n,m), axis1=0, axis2=2)
 
@@ -204,8 +228,8 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	bond_index = int(parameter_array[4])
 	K0 = float(parameter_array[5])
 	centered_at = int(parameter_array[6])
-	Delta = float(parameter_array[7]) # spread of wavepacket
-	maxt_time = float(parameter_array[8]) # L_qpc/(2 * J[0] * np.sin(K0)) + 1
+	Delta = float(parameter_array[7]) 
+	maxt_time = float(parameter_array[8]) 
 	N_timepoints = int(parameter_array[9])
 	ddot = str(parameter_array[10])
 	phi = float(parameter_array[11])
@@ -238,8 +262,10 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	    a0 = af
 	    b0 = bf
 	elif ddot == "fixed":
-	    a0, b0 = get_DD_init_for_fixed_k(K0)
+	    a0, b0 = get_DD_init_for_fixed_orbit(K0,af,phi)
 
+	elif ddot == "old":
+		a0, b0 = get_DD_init_for_fixed_k(K0)
 	else:
 	    print("Invalid Initial state for the qubit")
 
@@ -294,12 +320,16 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	    # reduced density matrix 
 	    rhot = get_reduced_density_matrix(psi_t,L_qpc+2)
 	    # entropy from schmidt
+	    """
 	    U, S, Vh = schmidt_qubit_qpc(psi_t)
 	    schmis = S**2
+	    """
 	    # save in arrays
 	    trajectories[:,i] = occupations
 	    rho_list.append(rhot)
-	    St.append(-1*np.sum(schmis*np.log(schmis+1e-17))) # avoid log(0)
+	    # St.append(-1*np.sum(schmis*np.log(schmis+1e-17))) # avoid log(0)
+	    St.append(entropy_vn(Qobj(rhot), sparse=False) )
+
 	    i += 1
 
 	# Save results
@@ -309,9 +339,9 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	              "Im_qubit_0":np.imag(a0), "Re_qubit_1":np.real(b0), "Im_qubit_1":np.imag(b0), "phi":phi,
 	              "alfabond": af }
 
-	file_name = "exact_L{}_J{}_t{}_om{}_Del{}_xo{}_k{:.4f}_bindex{}_maxtau{:.3f}_tstep{:.3f}_alpha{:.3f}_beta{:.3f}_phi{}_alpha_bond{:.3f}.h5".format(
+	file_name = "exact_L{}_J{}_t{}_om{}_Del{}_xo{}_k{:.4f}_bindex{}_maxtau{:.3f}_tstep{:.3f}_alpha{:.3f}_beta{:.3f}_phi{}_alpha_bond{:.3f}_qinit{}.h5".format(
 	                                    L_qpc, J_prime, t, Omega, Delta,centered_at , K0, bond_index,maxt_time,
-	                                    time_range[1]-time_range[0], np.abs(a0)**2, np.abs(b0)**2, phi, af)
+	                                    time_range[1]-time_range[0], np.abs(a0)**2, np.abs(b0)**2, phi, af,ddot)
 
 	results_file = h5py.File(data_route+file_name,'w')
 	# save parameters and maybe other meta data
