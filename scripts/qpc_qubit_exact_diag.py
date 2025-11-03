@@ -28,20 +28,20 @@ from tqdm import tqdm
 
 ll = 50
 L_qpc_list = [ll]
-Omega_list = [0.0, 0.1, 0.3, 0.5]
-t_list = [0.001, 0.01, 0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4 ,0.5 ,0.6, 0.8 ,1.0, 2.0]
+Omega_list =[0.0, 0.1, 0.3, 0.5] # 
+t_list = [0.001, 0.01, 0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4 ,0.5 ,0.6, 0.8 ,1.0, 2.0 ,10.0] # 
 J_prime_list  = [1]
 bond_index_list  = [int(ll/2)] # 7
 K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2 , 0.5*np.pi/2,  
 			0.4*np.pi/2,  0.3*np.pi/2]
-centered_at_list  = [10] # initial position of wavepacket
+centered_at_list  = [11] # initial position of wavepacket
 Delta_list  = [6.0] # spread of wavepacket
 maxt_time_list  = [60] # 18 fixed is set by the qpc velocity
 N_timepoints_list  = [400]
-ddot_list = ["old"] # can be "free", "momentum" OR "fixed" "old" (orbit) which is set by k0 based on af
+ddot_list = ["fixed"] # can be "free", "momentum" OR "fixed" "old" (orbit) which is set by k0 based on af
 phi_list = [0] #np.pi/2 # initial phase of the qubit
 # if its "free" af, bf will be the initial conditions
-af_list = [np.sqrt(0.2)] # np.sqrt(0.8) probability of qubit 0 state
+af_list = [np.sqrt(0.8)] # np.sqrt(0.8) probability of qubit 0 state
 
 # this is just to get the number of params for the combinations later
 Nparams = 13
@@ -111,8 +111,8 @@ def get_DD_init_for_momentum(k_prime, alphaf, betaf, ϕ):
     # set initial condtions for a given k_prime such that n_f is always the same
     # k_prime: float. The momentum of the qpc particle
     # nf: The occupations in the qubit 0 state
-    
-    Tau_bond = -(bond_index)/(2*J[0]*np.sin(k_prime))
+    dist = bond_index - centered_at
+    Tau_bond = -(dist)/(2*J[0]*np.sin(k_prime))
     α0 = alphaf*np.cos(Tau_bond*t) + 1j*np.exp(-1j*ϕ)*betaf*np.sin(Tau_bond*t)
     β0 = 1j*np.exp(1j*ϕ)*alphaf*np.sin(Tau_bond*t) + betaf*np.cos(Tau_bond*t)
     
@@ -124,20 +124,20 @@ def get_DD_init_for_fixed_orbit(k_prime,θf,ϕ):
 	# its state is the same given by thetaf and follows an orbit between 0 a 1 with fixed phi
     # Here we achieve this by shfiting time appropriately
 	# k_prime: float. The momentum of the qpc particle
-
-    τ0t = np.arccos(θf) - t*bond_index/(2*J[0]*np.sin(k_prime))
-    alpha0 = np.cos(-τ0t)
-    beta0 = -1j*np.sin(-τ0t)*np.exp(1j*ϕ)                   
-    return alpha0, beta0
+	dist = bond_index - centered_at 
+	τ0t = np.arccos(θf) - t*dist/(2*J[0]*np.sin(k_prime))
+	alpha0 = np.cos(-τ0t)
+	beta0 = -1j*np.sin(-τ0t)*np.exp(1j*ϕ)                   
+	return alpha0, beta0
 
 def get_DD_init_for_fixed_k(k_prime):
     # calculated the initial conditions of the DD such that, when the QPC hits the bond
     # its state is the same as that of a DD initialized localized in the first site when 
     # the QPC for that case hits the bond with an average momentum k0=pi/2
     # k_prime: float. The momentum of the qpc particle
-     
-    alpha0 = np.cos( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
-    beta0 = - 1j*np.sin( (t*bond_index)/(2*J[0])*(1/np.sin(k_prime) - 1) )
+    dist = bond_index - centered_at
+    alpha0 = np.cos( (t*dist)/(2*J[0])*(1/np.sin(k_prime) - 1) )
+    beta0 = - 1j*np.sin( (t*dist)/(2*J[0])*(1/np.sin(k_prime) - 1) )
                         
     return beta0, alpha0
 
@@ -204,6 +204,7 @@ def get_reduced_density_matrix(Psi,NN):
     # get density matrix as a sparse array
     ρ = np.outer(Psi, np.conj(Psi))
     # trace out QPC sites and return reduced rho for DD as Quobject
+
     return np.trace(ρ.reshape(n,m,n,m), axis1=0, axis2=2)
 
 

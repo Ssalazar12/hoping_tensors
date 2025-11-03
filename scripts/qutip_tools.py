@@ -91,7 +91,7 @@ def load_MPS(dir_route, file):
         # which is calculated using Ehrenfest Therem
         vg = 2 * J * np.sin(Param_dict["k0"])
         # effective mass in tightbinding
-        tau_free = Param_dict["L"]/ vg
+        tau_free = (Param_dict["L"]-Param_dict["x0"])/ vg
         last_t_index = find_nearest_index(Times, tau_free)
         last_t_index_full = last_t_index # save it to use for later
     
@@ -117,7 +117,7 @@ def load_exact_diag(dir_route, file):
         # Here we definide t=infty when the free QPC particle would hit the bond
         # which is calculated using Ehrenfest Therem
         Vg = 2 * J* np.sin(Param_dict["K0"])
-        tau_free = np.asarray(Param_dict["L_qpc"])/ Vg
+        tau_free = np.asarray(Param_dict["L_qpc"] - Param_dict["X0"])/ Vg
         # truncate to the time the free particle hits the far wall
         Times = res_h5["results/time"][:]
 

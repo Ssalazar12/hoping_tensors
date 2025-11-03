@@ -19,22 +19,22 @@ Strided.disable_threads()
 # PARAMETERS
 # ------------------------
 
-L_list = [100]
+L_list = [50]
 J_list  = [1.0] # qpc hopping
-t_list  = [0.05, 0.3] # 0.05,0.1, 0.3, 0.8 qubit hopping
-Ω_list  = [0.5] # interaction 0.0, 0.1 , 0.5, 0.7
+t_list  = [0.05,0.3] # 0.05,0.1, 0.3, 0.8 qubit hopping
+Ω_list  = [0.0, 0.3] # interaction 0.0, 0.1 , 0.5, 0.7
 spread_list  = [6.0] # spread of the gaussian wavepacket
-K0_list  = [pi/2] # group velocity of wavepacket
-X0_list  = [20] # 1 initial position of the wavepacket
+K0_list  = [pi/2,  0.8*pi/2, 0.3*pi/2] # group velocity of wavepacket
+X0_list  = [11] # 1 initial position of the wavepacket
 Bindex_list  = ["half"] # can also be "half" to put in round(Int64, L/2) , 8 for exact comp
-t_step_list  = [0.1] # 0.1 0.05
+t_step_list  = [0.07] # 0.1 0.05
 ttotal_list  = ["fixed"] # can be set to fixed so it is equal to hit time of free particle
-qinit_list  = ["free"] # "fixed"
-evol_type_list  = ["TEBD2", "TDVP"] # TDVP TEBD2
-cutoff_exponent_list  = [-20] # -18 -20
+qinit_list  = ["old"] # "old , fixed" set the proba of being in 0 at 0.12 always ,"free", 
+evol_type_list  = ["TEBD2","TDVP"] # TDVP TEBD2
+cutoff_exponent_list  = [-18] # -18 -20
 # creates the initial supperposition for the qubit
-θ_list  = [pi]
-ϕ_list  = [-pi/2]
+θ_list  = [0]
+ϕ_list  = [0]
 
 # create a list of all parameters to iterate over them
 parameter_list = [L_list, J_list,t_list, Ω_list, spread_list, K0_list, X0_list, Bindex_list,
@@ -239,6 +239,18 @@ function TEBD2_sweep(L, J, t, Ω, B , sites,Δτ)
     return gate_sweep
 end
 
+function get_DD_init_for_fixed_k(k_prime,t ,J, bond_index, x0)
+    # calculated the initial conditions of the DD such that, when the QPC hits the bond
+    # its state is the same as that of a DD initialized localized in the first site when 
+    # the QPC for that case hits the bond with an average momentum k0=pi/2
+    # k_prime: float. The momentum of the qpc particle
+    dist = bond_index - x0
+    beta0 = cos( (t*dist)/(2*J)*(1/sin(k_prime) - 1) )
+    beta1 = - 1im*sin( (t*dist)/(2*J)*(1/sin(k_prime) - 1) )
+                        
+    return beta0, beta1    
+end
+
 
 # ------------------------
 # MAIN
@@ -262,6 +274,7 @@ for iter_index in 1:length(parameter_iterator)
 	K0 = current_set[6] 
 	X0 = current_set[7] 
 
+    # place the bond
     if current_set[8]=="half"
         Bindex = round(Int64, L/2)
     else
@@ -269,25 +282,32 @@ for iter_index in 1:length(parameter_iterator)
     end
 
 	t_step = current_set[9] 
-
+    # set the max time
     if current_set[10]=="fixed"
         ttotal = L/(2*J*sin(K0))
     else
        ttotal = current_set[10] 
     end
 
-	qinit = current_set[11] 
+    qinit = current_set[11] 
+
+    if qinit == "free"
+        θ = current_set[14]
+        ϕ = current_set[15]         
+        β0 = cos(0.5*θ) 
+        β1 = sin(0.5*θ)*exp(1im * ϕ)      
+    elseif qinit == "old"         
+        β0, β1 = get_DD_init_for_fixed_k(K0,t ,J[1], Bindex, X0)
+        θ = acos(β0)
+        ϕ = asin(β1)
+    else
+        println("Invalid qubit initialization given")
+    end
+
 	evol_type = current_set[12]
 
 	cutoff_exponent = current_set[13]
 	cutoff = 10.0^cutoff_exponent
-
-	# creates the initial supperposition for the qubit
-	θ = current_set[14]
-	ϕ = current_set[15]
-
-	β0 = cos(0.5*θ) 
-	β1 = sin(0.5*θ)*exp(1im * ϕ)
 
 	bench = @elapsed begin 
 	    
@@ -309,7 +329,7 @@ for iter_index in 1:length(parameter_iterator)
 
 	# initialize containers
 
-	n_tsteps = round(Int64, ttotal/t_step)+1
+	n_tsteps = length(0.0:t_step:ttotal) 
 	wave_functions = Vector{MPS}(undef, n_tsteps)
 	occupations = Vector{Vector{Float64}}(undef, n_tsteps)
 	bond_dimensions = zeros(Int, n_tsteps)
@@ -318,7 +338,6 @@ for iter_index in 1:length(parameter_iterator)
 	density_matrices = zeros(ComplexF64, 2, 2, n_tsteps) 
 
 	psit = deepcopy(psi0)
-	dummy_counter = 1
 
 	if evol_type=="TEBD2"
 	    println("Evolving with TEBD...")
@@ -329,7 +348,7 @@ for iter_index in 1:length(parameter_iterator)
 	end
 
 	# time evolve
-	for t in 0.0:t_step:ttotal
+	for (dummy_counter, t) in enumerate(0.0:t_step:ttotal)
 	    # save observables
 	    occupations[dummy_counter] = ITensorMPS.expect(psit,"N")
 	    bond_dimensions[dummy_counter] = ITensorMPS.maxlinkdim(psit)
@@ -356,15 +375,14 @@ for iter_index in 1:length(parameter_iterator)
 	        println("Unknown evolution type")
 	    end
 	    
-	    dummy_counter+=1
 	end
 
 	# put the occupations in an easier format 
 	occupations_lin = reduce(hcat, occupations);
 	# saving the state
 	k0_round = round(K0, sigdigits=4)
-	θ_round = round(θ, sigdigits=4)
-	ϕ_round = round(ϕ, sigdigits=4)
+	θ_round = round(real(θ), sigdigits=4)
+	ϕ_round = round(real(ϕ), sigdigits=4)
 
 	end
 
