@@ -26,10 +26,10 @@ from tqdm import tqdm
 # GLOBAL VARIABLES
 # ---------------------------------------------------
 
-ll = 50
+ll = 60
 L_qpc_list = [ll]
 Omega_list =[0.0, 0.1, 0.3, 0.5] # 
-t_list = [0.001, 0.01, 0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4 ,0.5 ,0.6, 0.8 ,1.0, 2.0 ,10.0] # 
+t_list = [0.0001,0.001, 0.01, 0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4 ,0.5 ,0.6, 0.8 ,1.0, 2.0 ,10.0] # 
 J_prime_list  = [1]
 bond_index_list  = [int(ll/2)] # 7
 K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2 , 0.5*np.pi/2,  
@@ -45,8 +45,8 @@ af_list = [np.sqrt(0.8)] # np.sqrt(0.8) probability of qubit 0 state
 
 # this is just to get the number of params for the combinations later
 Nparams = 13
-# data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(ll)
-data_route = "../data/exact_diag_new/L={}/".format(ll)
+data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(ll)
+# data_route = "../data/exact_diag_new/L={}/".format(ll)
 
 # ---------------------------------------------------
 # FUNCTIONS
