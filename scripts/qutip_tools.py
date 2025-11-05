@@ -14,12 +14,6 @@ from scipy.interpolate import UnivariateSpline
 #  DATA ANALYSIS
 # ----------------------------------------------------
 
-def find_nearest_index(array, value):
-    # finds the index of the element closest to value
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-
-    return idx
 def load_data(dir_route, file):
     # loading the simulation data. In addition. it makes sure to implement
     # THE TIME=INFINITY CUTOFF TO AVOID back reflections
@@ -188,6 +182,55 @@ def get_transmision_proba(Param_dict, J):
     T_tot = simpson(T_k * Psi0k_abs, dx=k_arr[1] - k_arr[0])
 
     return T0, T_tot
+
+def get_time_at_bond(Times, N_bond):
+    """ we estimate the time the qpc wavepacket spends at the bond with the qubit from the  FWHM of the
+    occupations at the bond sites as a function of time """
+    
+    # estimate FWHF with an interpolation
+    spline = UnivariateSpline(Times, N_bond - np.max(N_bond) / 2, s=0)
+    bond_root = spline.roots()  # find the roots
+    if (len(bond_root) < 2):
+        print("not possible to estimate time at bond for ")
+        
+        tau_b = -Times[-1]
+    else:
+        # the first two roots yield the width at half maximum
+        tau_b = bond_root[1] - bond_root[0]
+    return tau_b
+
+def rotate_rho(ρ, τ, T , ϕ0):
+    # this rotates a qubits reduced density matrix around the x-axis up to angle tau*T
+    # This is the free qubit rabi oscillations
+    # Build the R matrix
+    Rmatrix = np.zeros((2,2)) + 0j
+    Rmatrix[0,0] = Rmatrix[1,1] = np.cos(τ*T)
+    Rmatrix[1,0] = Rmatrix[0,1] =  -1j*np.exp(1j*ϕ0)*np.sin(τ*T)
+    res_ = np.matmul(np.conj(Rmatrix.T), np.matmul(ρ, Rmatrix))
+    # apply the rotation and return
+    return res_
+
+def get_bloch_angles(ρ):
+    Cos_θ = 2*ρ[0,0] - 1
+    θ_ = np.arccos(Cos_θ)
+    Sin_ϕ = (ρ[1,0] - ρ[0,1])/(1j*np.sin(θ_))
+    return Cos_θ,Sin_ϕ
+
+def get_bloch_angles_time(ρ_list):
+    # Calculate the Bloch angles for each time step
+
+    costheta_list = []
+    sinphi_list = []
+    for i in range(0,len(ρ_list)):
+        # mixed state bloch sphere representation. Check page 34 of my notes for this 
+        r = ρ_list[i]
+        Cos_theta_p, Sin_phi_p = get_bloch_angles(r)
+        
+        costheta_list.append(Cos_theta_p)
+        sinphi_list.append(Sin_phi_p)
+        
+    return costheta_list, sinphi_list
+    
 
 # ----------------------------------------------------
 #  CREATING HAMILTONIANS AND OPERATORS IN QUTIP
@@ -380,7 +423,17 @@ def sort_by_overlap_matrix(Energies, Free_eigenvecs ,Eigenvecs):
         Sorted_indices.append(np.argmax(Over_matrix[i,:]))
     return Sorted_indices, Over_matrix
 
+# ------------------------------------------------------------------
+# HELPER FUNCS 
+# ------------------------------------------------------------------
 
+def find_nearest_index(array, value):
+    # finds the index of the element closest to value
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+
+    return idx
+    
 
 def get_file_names_on(param_list, route):
     name_list = os.listdir(route)
@@ -394,5 +447,4 @@ def get_file_names_on(param_list, route):
         name_list = list(filter(lambda x: subs in x, name_list))
 
     return name_list
-
 

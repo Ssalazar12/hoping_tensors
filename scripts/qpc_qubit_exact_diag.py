@@ -26,23 +26,22 @@ from tqdm import tqdm
 # GLOBAL VARIABLES
 # ---------------------------------------------------
 
-ll = 50
+ll = 60
 L_qpc_list = [ll]
-Omega_list =[0.0,0.3] # 
-t_list = [0.0, 0.001, 0.01, 0.05 ,0.1, 0.3 ,0.5 ,1.0, 2.0] # [0.0001,0.001, 0.01, 0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4 ,0.5 ,0.6, 0.8 ,1.0, 2.0 ,10.0] # 
+Omega_list =[0.3] # 
+t_list = [0.01, 0.1] #[0.0001, 0.001, 0.01, 0.05, 0.07, 0.1, 0.2, 0.3, 0.5 ,0.7, 1.0, 2.0]  
 J_prime_list  = [1]
 bond_index_list  = [int(ll/2)] # 7
-K0_list  = [np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2 , 0.5*np.pi/2,  
-			0.4*np.pi/2,  0.3*np.pi/2]
-centered_at_list  = [11] # initial position of wavepacket
+K0_list  = [0.9*np.pi/2] #[np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2,0.5*np.pi/2, 0.4*np.pi/2,0.3*np.pi/2]
+centered_at_list  = [25] # initial position of wavepacket
 Delta_list  = [6.0] # spread of wavepacket
 maxt_time_list  = [60] # 18 fixed is set by the qpc velocity
 N_timepoints_list  = [400]
 ddot_list = ["fixed"] # can be "free", "momentum" OR "fixed" "old" (orbit) which is set by k0 based on af
 phi_list = [0] #np.pi/2 # initial phase of the qubit
-# if its "free" af, bf will be the initial conditions
-af_list = [0.3*np.pi] # np.sqrt(0.8) probability of qubit 0 state
-
+# if its "free" af, bf will be the initial conditions this one fo the bloch angles
+af_list = [0.0] 
+# np.sqrt(0.8) probability of qubit 0 state
 # this is just to get the number of params for the combinations later
 Nparams = 13
 #data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(ll)
@@ -119,15 +118,15 @@ def get_DD_init_for_momentum(k_prime,θf):
 
     return alpha0, beta0
 
-def get_DD_init_for_fixed_orbit(k_prime,θf,ϕ):
+def get_DD_init_for_fixed_orbit(k_prime,θf):
 	# calculated the initial conditions of the DD such that, when the QPC hits the bond
 	# its state is the same given by thetaf and follows an orbit between 0 a 1 with fixed phi
     # Here we achieve this by shfiting time appropriately
 	# k_prime: float. The momentum of the qpc particle
 	dist = bond_index - centered_at 
-	τ0t = np.arccos(θf) - t*dist/(2*J[0]*np.sin(k_prime))
-	alpha0 = np.cos(-τ0t)
-	beta0 = -1j*np.sin(-τ0t)*np.exp(1j*ϕ)                   
+	τ0t = - 0.5*θf + t*dist/(2*J[0]*np.sin(k_prime))
+	alpha0 = np.cos(τ0t)
+	beta0 = -1j*np.sin(τ0t)                  
 	return alpha0, beta0
 
 def get_DD_init_for_fixed_k(k_prime):
@@ -246,7 +245,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	print("")
 	print("L_qpc=", L_qpc,  "maxt_time=",maxt_time, "bond_index=",bond_index, 
 		"centered_at=", centered_at, "band_width=",Delta,"K0=",K0, "J_prime=",J_prime,"t=", 
-		t, "Omega=", Omega, "dot init=",ddot)
+		t, "Omega=", Omega, "dot init=",ddot, "theta0=", af)
 	print("...")
 	print(" ")
 
@@ -263,7 +262,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	    a0 = af
 	    b0 = bf
 	elif ddot == "fixed":
-	    a0, b0 = get_DD_init_for_fixed_orbit(K0,af,phi)
+	    a0, b0 = get_DD_init_for_fixed_orbit(K0,af)
 
 	elif ddot == "old":
 		a0, b0 = get_DD_init_for_fixed_k(K0)
