@@ -21,16 +21,16 @@ Strided.disable_threads()
 
 L_list = [100]
 J_list  = [1.0] # qpc hopping
-t_list  = [0.01 0.1] # 0.05,0.1, 0.3, 0.8 qubit hopping
-Ω_list  = [0.3] # interaction 0.0, 0.1 , 0.5, 0.7
+t_list  = [0.001, 0.01, 0.03, 0.05, 0.07, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 2.0, 3.0 ] # 0.05,0.1, 0.3, 0.8 qubit hopping
+Ω_list  = [0.0, 0.1, 0.3, 0.5, 1.0] # interaction 0.0, 0.1 , 0.5, 0.7
 spread_list  = [6.0] # spread of the gaussian wavepacket
-K0_list  = [0.9*pi/2, 0.5*pi/2] # group velocity of wavepacket
-X0_list  = [11] # 1 initial position of the wavepacket
+K0_list  = [0.3*pi/2, 0.4*pi/2, 0.5*pi/2, 0.6*pi/2, 0.7*pi/2, 0.8*pi/2, 0.85*pi/2 , 0.9*pi/2, 0.95*pi/2 ,pi/2] # group velocity of wavepacket
+X0_list  = [25] # 1 initial position of the wavepacket
 Bindex_list  = ["half"] # can also be "half" to put in round(Int64, L/2) , 8 for exact comp
 t_step_list  = [0.07] # 0.1 0.05
 ttotal_list  = ["fixed"] # can be set to fixed so it is equal to hit time of free particle
 qinit_list  = ["fixed"] # "old , fixed" set the proba of being in 0 at 0.12 always ,"free", 
-evol_type_list  = ["TEBD2","TDVP"] # TDVP TEBD2
+evol_type_list  = ["TEBD2"] # TDVP TEBD2
 cutoff_exponent_list  = [-18] # -18 -20
 # creates the initial supperposition for the qubit
 θ_list  = [0.3*pi]
