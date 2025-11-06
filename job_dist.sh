@@ -1,9 +1,9 @@
 !/usr/bin/bash
 
 # reserve memory for each job, default 1GB
-#$ -l h_vmem=20G
+#$ -l h_vmem=35G
 # reserve the cores
-#$ -pe smp 8
+#$ -pe smp 10
 
 # name of queue job
 #$ -N 'distributed'
@@ -18,7 +18,7 @@
 #$ -o logs/
 
 # activate Julia threading
-export JULIA_NUM_THREADS=8
+export JULIA_NUM_THREADS=10
 module load julia 
 # start program
-julia /home/user/santiago.salazar-jaramillo/hoping_tensors/scripts/MPS_run.jl
+julia /home/user/santiago.salazar-jaramillo/hoping_tensors/scripts/MPS_run_dist.jl
