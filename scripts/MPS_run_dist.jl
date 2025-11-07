@@ -30,7 +30,7 @@ Bindex_list  = ["half"] # can also be "half" to put in round(Int64, L/2) , 8 for
 t_step_list  = [0.07] # 
 ttotal_list  = ["fixed"] # can be set to fixed so it is equal to hit time of free particle
 qinit_list  = ["fixed"] # "old , fixed" set the proba of being in 0 at 0.12 always ,"free", 
-evol_type_list  = ["TEBD2"] # TDVP TEBD2
+evol_type_list  = ["TDVP"] # TDVP TEBD2
 cutoff_exponent_list  = [-18] # -18 -20
 # creates the initial supperposition for the qubit
 θ_list  = [0.3*pi]
