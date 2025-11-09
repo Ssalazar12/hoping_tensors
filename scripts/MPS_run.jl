@@ -19,13 +19,13 @@ Strided.disable_threads()
 # PARAMETERS
 # ------------------------
 
-L_list = [100]
+L_list = [60]
 J_list  = [1.0] # qpc hopping
-t_list  =  [0.01] 
+t_list  =  [0.1] 
 Ω_list  = [0.3] # interaction 0.0, 0.1 , 0.5, 0.7
 spread_list  = [6.0] # spread of the gaussian wavepacket
-K0_list  = [0.9*pi/2] # group velocity of wavepacket
-X0_list  = [25] # 1 initial position of the wavepacket
+K0_list  = [0.6*pi/2] # group velocity of wavepacket
+X0_list  = [11] # 1 initial position of the wavepacket
 Bindex_list  = ["half"] # can also be "half" to put in round(Int64, L/2) , 8 for exact comp
 t_step_list  = [0.07] # 0.1 0.05
 ttotal_list  = ["fixed"] # can be set to fixed so it is equal to hit time of free particle
