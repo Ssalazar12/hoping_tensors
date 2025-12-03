@@ -26,31 +26,31 @@ from tqdm import tqdm
 # GLOBAL VARIABLES
 # ---------------------------------------------------
 
-ll = 60
+ll = 100
 L_qpc_list = [ll]
-Omega_list =[0.3] # 
-t_list = [0.01, 0.1] #[0.0001, 0.001, 0.01, 0.05, 0.07, 0.1, 0.2, 0.3, 0.5 ,0.7, 1.0, 2.0]  
+Omega_list =[0.1, 0.3, 0.6, 1.0] # 
+t_list = [0.0001, 0.001, 0.01, 0.02, 0.03,0.04,0.05,0.06,0.07,0.08,0.09 ,0.1,
+		  0.2, 0.3,0.4,0.5,0.7,0.8,0.9, 1.0, 2.0, 3.0, 5.0]
 J_prime_list  = [1]
 bond_index_list  = [int(ll/2)] # 7
-K0_list  = [0.9*np.pi/2] #[np.pi/2, 0.9*np.pi/2, 0.8*np.pi/2, 0.7*np.pi/2, 0.6*np.pi/2,0.5*np.pi/2, 0.4*np.pi/2,0.3*np.pi/2]
-centered_at_list  = [25] # initial position of wavepacket
-Delta_list  = [6.0] # spread of wavepacket
-maxt_time_list  = [60] # 18 fixed is set by the qpc velocity
-N_timepoints_list  = [400]
-ddot_list = ["fixed"] # can be "free", "momentum" OR "fixed" "old" (orbit) which is set by k0 based on af
-phi_list = [0] #np.pi/2 # initial phase of the qubit
+K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.85*np.pi/2, 0.8*np.pi/2,  0.75*np.pi/2, 0.7*np.pi/2, 
+			0.6*np.pi/2,0.5*np.pi/2, 0.4*np.pi/2,0.3*np.pi/2]
+centered_at_list  = [30] # initial position of wavepacket
+Delta_list  = [7.0] # spread of wavepacket
+maxt_time_list  = [90] # 
+N_timepoints_list  = [500]
+ddot_list = ["fixed"] # can be "free", "momentum" "fixed" (orbit) "old" which is set by k0 based on af
+phi_list = [0] # initial phase of the qubit
 # if its "free" af, bf will be the initial conditions this one fo the bloch angles
-af_list = [0.0] 
-# np.sqrt(0.8) probability of qubit 0 state
+af_list = [0.0, 0.1*np.pi, 0.25*np.pi, 0.5*np.pi] # theta angle at hit time
 # this is just to get the number of params for the combinations later
 Nparams = 13
-#data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(ll)
-data_route = "../data/exact_diag_new/L={}/".format(ll)
+data_route = "/home/user/santiago.salazar-jaramillo/hoping_tensors/data/exact_diag_new/L={}/".format(ll)
+#data_route = "../data/exact_diag_new/L={}/".format(ll)
 
 # ---------------------------------------------------
 # FUNCTIONS
 # ---------------------------------------------------
-
 
 def create_hamiltonians(L, T, Bond):
     # creates the decoupled and interacting hamiltonians 
@@ -238,7 +238,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	L = L_qpc + 2
 	J = np.ones(L_qpc) 
 	J[bond_index] = J_prime  
-	bf = np.sqrt(1-af**2) # probability of qubit 1 state
+	bf = np.sin(af/2) # probability of qubit 1 state
 	x = np.arange(0,L_qpc)  # latice sites
 
 	print("calculating for: ")

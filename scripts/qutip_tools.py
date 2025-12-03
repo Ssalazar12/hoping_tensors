@@ -266,14 +266,6 @@ def get_thight_binding_hamiltonian(op_list, Nsites,jcouple, bc="fixed"):
         
     return H 
 
-def get_initial_state(init_coefs, basis_set):
-	# creates the initial Psi0 state by combining the lists init_coefs and basis_set
-	# into a normalized qutip ket
-
-	Psi0 = np.sum([init_coefs[j]*basis_list[j] for j in range(0,len(init_coefs))])
-	Psi0 = Psi0.unit()
-
-	return Psi0
 
 def get_1p_basis(Nsites):
     # creates the initial wave function from the init_coefs list
