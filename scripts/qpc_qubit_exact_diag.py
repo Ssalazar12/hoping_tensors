@@ -33,8 +33,7 @@ t_list = [0.0001, 0.001, 0.01, 0.02, 0.03,0.04,0.05,0.06,0.07,0.08,0.09 ,0.1,
 		  0.2, 0.3,0.4,0.5,0.7,0.8,0.9, 1.0, 2.0, 3.0, 5.0]
 J_prime_list  = [1]
 bond_index_list  = [int(ll/2)] # 7
-K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.85*np.pi/2, 0.8*np.pi/2,  0.75*np.pi/2, 0.7*np.pi/2, 
-			0.6*np.pi/2,0.5*np.pi/2, 0.4*np.pi/2,0.3*np.pi/2]
+K0_list  = [0.1*np.pi/2, 0.2*np.pi/2]
 centered_at_list  = [30] # initial position of wavepacket
 Delta_list  = [7.0] # spread of wavepacket
 maxt_time_list  = [90] # 
