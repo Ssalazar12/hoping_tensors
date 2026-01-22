@@ -212,8 +212,6 @@ def rotate_rho(ρ, τ, T , ϕ0):
 
 def get_bloch_angles(ρ):
     Cos_θ = 2*ρ[0,0] - 1
-    #θ_ = np.arccos(Cos_θ)
-    #Sin_ϕ = (ρ[1,0] - ρ[0,1])/(1j*np.sin(θ_))
     Sin_θ = np.sqrt(1-Cos_θ**2) 
     Sin_ϕ = (ρ[1,0] - ρ[0,1])/(1j*Sin_θ)
     return Cos_θ,Sin_ϕ
