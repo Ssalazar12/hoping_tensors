@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from qutip import  *
 
 import h5py
@@ -230,6 +231,64 @@ def get_bloch_angles_time(ρ_list):
         sinphi_list.append(Sin_phi_p)
         
     return costheta_list, sinphi_list
+
+def get_free_orbit(ρ0, cosθ0, ϕ0 ,time_range,ti):
+    # calculate the free orbit of a qubit based ond the given einitial conditions
+    rho_free_list = [ρ0]
+    theta_free_list = [np.arccos(np.real(cosθ0))]
+    phi_free_list = [ϕ0]
+    
+    for i in range(1,len(time_range)):
+        # rotate up to time tau
+        τ = time_range[i] 
+        rho_tau = rotate_rho(rho_free_list[0], τ, ti , ϕ0)
+        # get the angles at that tau
+        Cos_theta_p, Sin_phi_p = get_bloch_angles(rho_tau)
+        Sin_theta_p = np.sqrt(1-Cos_theta_p**2)
+        Cos_phi_p = np.sqrt(1-Sin_phi_p**2)
+        # now properly get the angles        
+        rho_free_list.append(rho_tau)
+        theta_free_list.append(math.atan2(np.real(Sin_theta_p), np.real(Cos_theta_p)))
+        phi_free_list.append(math.atan2(np.real(Sin_phi_p), np.real(Cos_phi_p)))
+        
+    # fix initial value error
+    phi_free_list[0] = phi_free_list[1]
+
+    return rho_free_list, theta_free_list, phi_free_list
+
+def get_euclidean_distance(costheta, sinphi, theta_free_list, phi_free_list):
+    # gets the euclidean distance between the free orbit and the coupled one 
+    # it also returns the magnitude of the bloch vector for the coupled case
+
+    # Now plot the numerical coupled case
+    dd_theta = np.real(np.arccos(costheta))
+    dd_phi = np.real(np.arcsin(sinphi))
+
+    # calculate the equclidean distance between each point of the decoupled and interacting orbits
+    x_free = np.sin(theta_free_list)*np.cos(phi_free_list)
+    y_free = np.sin(theta_free_list)*np.sin(phi_free_list)
+    z_free = np.cos(theta_free_list)
+
+    x_ = np.sin(dd_theta)*np.cos(dd_phi)
+    y_ = np.sin(dd_theta)*sinphi
+    z_ = np.asarray(costheta)
+
+    e_distance = np.real(np.sqrt((x_free-x_)**2 + (y_free-y_)**2 + (z_free-z_)**2))
+    e_distance = e_distance[1:] # the first one is pruned because of inacuracies
+
+    return e_distance
+
+def get_purity(rho_array):
+    # rho array is an nx2x2 array where the n index is the 
+    # reduced density matrix in time 
+    # returns purity as a function in time
+    purity_list = []
+    for i in range(0, np.shape(rho_array)[0]):
+        rr = rho_array[i,:,:]
+        purity_list.append(np.trace(rr.dot(rr)).real)
+        
+    return np.asarray(purity_list)
+
     
 
 # ----------------------------------------------------
