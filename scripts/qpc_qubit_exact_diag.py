@@ -26,7 +26,7 @@ from tqdm import tqdm
 ll = 100
 L_qpc_list = [ll]
 Omega_list =[0.05 ,0.1,  0.3,  0.6,  1. ,  2. ,  3. ,  5. , 10. ]
-t_list = [0.0]
+t_list = [1.5, 2.0]
 J_prime_list  = [1]
 bond_index_list  = [int(ll/2)]  
 K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.85*np.pi/2, 0.8*np.pi/2,  0.75*np.pi/2, 0.7*np.pi/2,
@@ -34,7 +34,7 @@ K0_list  = [np.pi/2, 0.95*np.pi/2, 0.9*np.pi/2, 0.85*np.pi/2, 0.8*np.pi/2,  0.75
 centered_at_list  = [30] # initial position of wavepacket
 Delta_list  = [7.0] # spread of wavepacket
 maxt_time_list  = [300] # 
-N_timepoints_list  = [800]
+N_timepoints_list  = [2000]
 ddot_list = ["fixed"] # can be "free", "momentum" "fixed" (orbit) "old" which is set by k0 based on af
 phi_list = [0] # initial phase of the qubit
 # if its "free" af, bf will be the initial conditions this one fo the bloch angles

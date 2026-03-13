@@ -235,7 +235,9 @@ def get_bloch_angles_time(ρ_list):
 def get_free_orbit(ρ0, cosθ0, ϕ0 ,time_range,ti):
     # calculate the free orbit of a qubit based ond the given einitial conditions
     rho_free_list = [ρ0]
-    theta_free_list = [np.arccos(np.real(cosθ0))]
+    # Clip to avoid occasional floating-point spillover outside [-1, 1].
+    cosθ0_clip = np.clip(np.real(cosθ0), -1.0, 1.0)
+    theta_free_list = [np.arccos(cosθ0_clip)]
     phi_free_list = [ϕ0]
     
     for i in range(1,len(time_range)):
@@ -244,12 +246,14 @@ def get_free_orbit(ρ0, cosθ0, ϕ0 ,time_range,ti):
         rho_tau = rotate_rho(rho_free_list[0], τ, ti , ϕ0)
         # get the angles at that tau
         Cos_theta_p, Sin_phi_p = get_bloch_angles(rho_tau)
-        Sin_theta_p = np.sqrt(1-Cos_theta_p**2)
-        Cos_phi_p = np.sqrt(1-Sin_phi_p**2)
+        Cos_theta_p = np.clip(np.real(Cos_theta_p), -1.0, 1.0)
+        Sin_phi_p = np.clip(np.real(Sin_phi_p), -1.0, 1.0)
+        Sin_theta_p = np.sqrt(np.clip(1 - Cos_theta_p**2, 0.0, 1.0))
+        Cos_phi_p = np.sqrt(np.clip(1 - Sin_phi_p**2, 0.0, 1.0))
         # now properly get the angles        
         rho_free_list.append(rho_tau)
-        theta_free_list.append(math.atan2(np.real(Sin_theta_p), np.real(Cos_theta_p)))
-        phi_free_list.append(math.atan2(np.real(Sin_phi_p), np.real(Cos_phi_p)))
+        theta_free_list.append(math.atan2(Sin_theta_p, Cos_theta_p))
+        phi_free_list.append(math.atan2(Sin_phi_p, Cos_phi_p))
         
     # fix initial value error
     phi_free_list[0] = phi_free_list[1]
