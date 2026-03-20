@@ -295,9 +295,9 @@ def get_purity(rho_array):
 
     
 
-# ----------------------------------------------------
+# ------------------------------------------------------------
 #  CREATING HAMILTONIANS AND OPERATORS IN QUTIP
-# ----------------------------------------------------
+# ----------------------------------------------------------
 
 def get_qpc_H(op_list, Nsites, Nqpc,jcouple):
         # create the Hamiltonian for the QPC where Nsites includes the double dot
@@ -411,6 +411,61 @@ def create_lindblad_op(Nsites, operator_list ,gamma,collapse_type="number"):
 # ------------------------------------------------------------------
 # Numpy Perturbation theory and Exact diagonalizaiton
 # ------------------------------------------------------------------
+
+
+def create_hamiltonians(L, T, Bond):
+    # creates the decoupled and interacting hamiltonians 
+    
+    # L_qpc = qpc lattice sites
+    # T = qubit hopping
+    # BOnd = index for bond locatin
+    H_matrix = np.zeros((2*L,2*L))
+    # fill in the dd hopping 
+    d_indices= kth_diag_indices(H_matrix,1)
+    H_matrix[d_indices] = -T
+    
+    # fill in the QPC hopping
+    d_indices= kth_diag_indices(H_matrix,2)
+    H_matrix[d_indices] = -J[0]
+    
+    # when qpc and qubit hop a the same time there is no contribution
+    d_indices= kth_diag_indices(H_matrix,1)
+    odd_inds = (d_indices[0][1::2], d_indices[1][1::2])
+    H_matrix[odd_inds] = 0
+    
+    # save the free hamiltonian for later use
+    Hdeco = H_matrix.copy()
+    
+    # Fill in the interaction at the bond
+    H_matrix[2*Bond,2*(Bond+1)] = H_matrix[2*Bond,2*(Bond+1)]+ Omega
+    
+    # Now the elemets below the diagonal
+    for i in range(0,2*L):
+        for j in range(i + 1, 2*L):
+            H_matrix[j, i] = H_matrix[i, j]
+            Hdeco[j, i] = Hdeco[i, j]
+            
+    return H_matrix, Hdeco
+
+
+def get_bands(Eigen_energies, Eigen_vectors, Minus_indices, Plus_indies):
+    # separates eigenvectors and eigenvalues into plus/minus enegy bands
+    # and then sorts by enegy magnitude
+    
+    # minus band
+    Energies_m = Eigen_energies[Minus_indices]
+    States_m = Eigen_vectors[:,Minus_indices]
+    # sort by magnitude
+    Energies_m, States_m = mag_sort(Energies_m, States_m)
+    
+    # plus band
+    Energies_p = Eigen_energies[Plus_indies]
+    States_p = Eigen_vectors[:,Plus_indies]
+    # sort by magnitude
+    Energies_p, States_p = mag_sort(Energies_p, States_p)
+    
+    return Energies_m, States_m, Energies_p, States_p
+
 
 def kth_diag_indices(a, k):
     # negative numbers go below the diagonal, 0 is the main diagonal and positive nums go above
