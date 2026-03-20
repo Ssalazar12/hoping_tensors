@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # name of queue job
-#$ -N test
+#$ -N exact_diag
 
 # write errors and logfiles in folder log/
 # folder MUST EXIST!
