@@ -137,20 +137,6 @@ def get_DD_init_for_fixed_k(k_prime):
     return beta0, alpha0
 
 
-def schmidt_qubit_qpc(c_eigs):
-    # calculates the schmidt decomposition between the QPC and qubit for some stae
-    # given how we build our hamiltonian, the 0qubit-eigenstates are in the even indices
-    # while the 1qubit ones are in the odd indices
-    # c_eigs is the state vector
-
-    # arange in MPS form for SVD
-    col_1 = np.asarray(c_eigs[0::2]).reshape(-1,1)
-    col_2 =  np.asarray(c_eigs[1::2]).reshape(-1,1)
-    psi_mat = np.concatenate((col_1, col_2), axis=1)
-    U, S, Vh = np.linalg.svd(psi_mat)
-
-    return U, S, Vh
-
 def get_QPC_occupations(Psi):
     # apply the density opperator to the full composite Psi and return the
     # densities a teach of the QPC sites
@@ -315,15 +301,11 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 	    qubit_traj.append(get_qubit_occupations(psi_t))
 	    # reduced density matrix 
 	    rhot = get_reduced_density_matrix(psi_t,L_qpc+2)
-	    # entropy from schmidt
-	    """
-	    U, S, Vh = schmidt_qubit_qpc(psi_t)
-	    schmis = S**2
-	    """
+	
 	    # save in arrays
 	    trajectories[:,i] = occupations
 	    rho_list.append(rhot)
-	    # St.append(-1*np.sum(schmis*np.log(schmis+1e-17))) # avoid log(0)
+	    # get entropy using qutip
 	    St.append(entropy_vn(Qobj(rhot), sparse=False) )
 
 	    i += 1
