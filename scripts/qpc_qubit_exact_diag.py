@@ -172,7 +172,7 @@ def time_evolve(Psi0, Tau, states_, energies_):
     # and states_p for symmetric band
     psi_t = np.zeros(len(Psi0)) + 0j
     for k in range(0,len(energies_)):
-        psi_t += np.exp(-1j*Tau*energies_[k])*np.dot( np.conj(states_[:,k]), Psi0)*states_[:,k]
+        psi_t += np.exp(-1j*Tau*energies_[k])*np.dot( np.conj(states_[:,k]), s)*states_[:,k]
 
     return psi_t
 
@@ -298,7 +298,7 @@ for simulation_index in tqdm(range(0,np.shape(comb_array)[0]), desc="Iterating P
 
 	i = 0
 	for Tau in time_range:
-	    psi_t = time_evolve(psi_0, Tau,eigen_vecs, energies)
+	    psi_t = time_evolve(psi_0, Tau, eigen_vecs, energies)
 	    occupations = get_QPC_occupations(psi_t)
 	    qubit_traj.append(get_qubit_occupations(psi_t))
 	    # reduced density matrix 
