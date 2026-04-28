@@ -1,0 +1,560 @@
+import numpy as np
+import math
+from qutip import  *
+
+import h5py
+import json
+import os
+from scipy.integrate import simpson
+from scipy.interpolate import UnivariateSpline
+# from scipy import sparse
+
+# HELPER FUNCTIONS FOr python project
+
+# ----------------------------------------------------
+#  DATA ANALYSIS
+# ----------------------------------------------------
+
+def load_data(dir_route, file):
+    # loading the simulation data. In addition. it makes sure to implement
+    # THE TIME=INFINITY CUTOFF TO AVOID back reflections
+    with h5py.File(dir_route + file, 'r') as res_h5:
+        # we ALWAYS set J=1
+        J=1
+        Param_dict = json.loads(res_h5['metadata/parameters'][()])
+        # time range
+        Times = res_h5["results/time"][:]
+        # Here we definide t=infty when the free QPC particle would hit the bond
+        # which is calculated using Ehrenfest Therem
+        vg = 2 * J * np.sin(Param_dict["k0"])
+        # effective mass in tightbinding
+        tau_free = Param_dict["L_qpc"]/ vg
+        last_t_index = find_nearest_index(Times, tau_free)
+        last_t_index_full = last_t_index # save it to use for later
+
+        # load qpc data
+        N_bond = res_h5["results/QPC_bond_density"][:last_t_index]
+        N_left = res_h5["results/QPC_left_density"][:last_t_index]
+        N_right = res_h5["results/QPC_right_density"][:last_t_index]
+
+        # load dot data
+        N_d1 = res_h5["results/d1_density"][:last_t_index]
+        N_d2 = res_h5["results/d2_density"][:last_t_index]
+
+        # trajectories
+        Trajectories = res_h5["results/trajectories"][:,:last_t_index]
+
+        # Quantities depending on the reduced density matrix are coarse grained in time
+        # therefore for those the final time has to be chosen as the closest one they have
+        last_t_index = find_nearest_index(Times[0::Param_dict["entropy_t_skip"]], tau_free)
+        DD_costheta = res_h5["results/dot_bloch_costheta"][:last_t_index]
+        DD_sinphi = res_h5["results/dot_bloch_sinphi"][:last_t_index]
+        # entanglement
+        VN_entropy = res_h5["results/dot_VN_entropy"][:last_t_index]
+        Purity = res_h5["results/dot_purity"][:last_t_index]
+
+        # when theta = 0 phi becomes undefined because it could take any values
+        try:
+            # print("phi is undefined using next values")
+            nan_index = np.argwhere(np.isnan(DD_sinphi))[0][0]
+            # replace the nan value with the next numerical val
+            DD_sinphi[nan_index] = DD_sinphi[nan_index + 1]    
+
+        except IndexError:
+            pass
+
+        Times = Times[:last_t_index_full]
+
+    res_h5.close()
+
+    return Param_dict, Times, N_bond, N_left, N_right, N_d1, N_d2, Trajectories, VN_entropy, Purity, DD_costheta, DD_sinphi
+
+
+def load_MPS(dir_route, file):
+    # loads the data for an MPS evolution
+
+    with h5py.File(dir_route + file, 'r') as res_h5:
+        # we ALWAYS set J=1
+        J=1
+        # load parameters
+        Param_dict = json.loads(res_h5['metadata/parameters'][()])
+    
+        # time range
+        Times = res_h5["results/time_list"][:]
+    
+        # Here we definide t=infty when the free QPC particle would hit the bond
+        # which is calculated using Ehrenfest Therem
+        vg = 2 * J * np.sin(Param_dict["k0"])
+        # effective mass in tightbinding
+        tau_free = (Param_dict["L"]-Param_dict["x0"])/ vg
+        last_t_index = find_nearest_index(Times, tau_free)
+        last_t_index_full = last_t_index # save it to use for later
+    
+        # load qpc data
+        Occupations = res_h5["results/occupations"][:last_t_index]
+        Bond_dim = res_h5["results/bond_dimensions"][:last_t_index]
+        Times = res_h5["results/time_list"][:last_t_index]
+        Entropies = res_h5["results/entropies"][:last_t_index]
+        # Quantities depending on the reduced density matrix are coarse grained in time?
+        # therefore for those the final time has to be chosen as the closest one they have
+        #last_t_index = find_nearest_index(Times[0::2], tau_free)
+        qubit_rho = res_h5["results/qubit_density_matrices"][:last_t_index]
+    
+    res_h5.close()
+
+    return Param_dict, Times, Occupations, Bond_dim, Entropies, qubit_rho
+
+def load_exact_diag(dir_route, file):
+    # loads the data from the new_exact diag algorithm not the one from qutip
+    with h5py.File(dir_route+file, 'r') as res_h5:
+        Param_dict = json.loads(res_h5['metadata/parameters'][()])
+        J=1
+        # Here we definide t=infty when the free QPC particle would hit the bond
+        # which is calculated using Ehrenfest Therem
+        Vg = 2 * J* np.sin(Param_dict["K0"])
+        tau_free = np.asarray(Param_dict["L_qpc"] - Param_dict["X0"])/ Vg
+        # truncate to the time the free particle hits the far wall
+        Times = res_h5["results/time"][:]
+
+        last_t_index = find_nearest_index(Times, tau_free)
+        Times = Times[:last_t_index]
+        Occupations = res_h5["results/trajectories"][:,:last_t_index]
+        D0_density = res_h5["results/d0_density"][:last_t_index]
+        Qubit_rho = res_h5["results/qubit_rho"][:last_t_index]
+        Entropy = res_h5["results/Entropy"][:last_t_index]
+        
+    res_h5.close()
+
+    return Param_dict, Times, Occupations, D0_density, Qubit_rho, Entropy
+
+
+def get_timescale_data(Param_dict, Traject, Times, N_bond):
+    # calculates the quantities relevant to the estimation of the hitting time
+    # including the time it takes to hit the different parts of the QPC
+    J = 1
+
+    QPC_traject = Traject[:, :]  # we only care about qpc trajectories for now
+    # vector holding distance to origin of each lattice site
+    r_vect = np.arange(0, Param_dict["L_qpc"])
+    # position average in time
+    x_av = np.asarray([np.dot(QPC_traject[:, i], r_vect) for i in range(0, len(Times))])
+    # effective mass in tightbinding
+
+    # trajectory using Ehrenfest Therem
+    vg = 2 * J * np.sin(Param_dict["k0"])
+
+    # time to get to the bond which is between [bond_index and bond_index+1]
+    tau_0b = (Param_dict["bond_index"] - 1)/ vg
+
+    # time at the bond defined at width at half maximum of the bond occupation
+    # estimate FWHF with an interpolation
+    spline = UnivariateSpline(Times, N_bond - np.max(N_bond) / 2, s=0)
+    bond_root = spline.roots()  # find the roots
+    if (len(bond_root) < 2):
+        print("not possible to estimate time at bond for ")
+        print(Param_dict)
+        tau_b = -Times[-1]
+    else:
+        # the first two roots yield the width at half maximum
+        tau_b = bond_root[1] - bond_root[0]
+
+    #time from bond to the wall
+    tau_bL = (Param_dict["L_qpc"] - Param_dict["bond_index"] - 2)/ vg
+    # total time
+    tau_L = tau_0b + tau_b + tau_bL
+
+    # time if there were no potential at bond
+    tau_free = Param_dict["L_qpc"]/ vg
+
+    return tau_L, tau_free, tau_b, vg, x_av, bond_root
+
+def get_transmision_proba(Param_dict, J):
+    # in the limit where we have very localized state the transmision probability is approximately that of the
+    # one for K0
+    V0 = J - 2 * (Param_dict["Omega"] + Param_dict["J_prime"])
+    T0 = 1 / (1 + (V0 / Param_dict["k0"]) ** 2)
+
+    # the momentum distribution
+    k_arr = np.linspace(-200, 200, 5000)
+    Psi0k_abs = (Param_dict["band_width"] ** 2 / np.pi) ** (1 / 2) * np.exp(
+        -(Param_dict["band_width"] ** 2) * (k_arr - Param_dict["k0"]) ** 2)
+    # now with the wave packet weights
+    T_k = 1 / (1 + (V0 / k_arr) ** 2)
+    T_tot = simpson(T_k * Psi0k_abs, dx=k_arr[1] - k_arr[0])
+
+    return T0, T_tot
+
+def get_time_at_bond(Times, N_bond):
+    """ we estimate the time the qpc wavepacket spends at the bond with the qubit from the  FWHM of the
+    occupations at the bond sites as a function of time """
+    
+    # estimate FWHF with an interpolation
+    spline = UnivariateSpline(Times, N_bond - np.max(N_bond) / 2, s=0)
+    bond_root = spline.roots()  # find the roots
+    if (len(bond_root) < 2):
+        print("not possible to estimate time at bond for ")
+        
+        tau_b = -Times[-1]
+    else:
+        # the first two roots yield the width at half maximum
+        tau_b = bond_root[1] - bond_root[0]
+    return tau_b
+
+def rotate_rho(ρ, τ, T , ϕ0):
+    # this rotates a qubits reduced density matrix around the x-axis up to angle tau*T
+    # This is the free qubit rabi oscillations
+    # Build the R matrix
+    Rmatrix = np.zeros((2,2)) + 0j
+    Rmatrix[0,0] = Rmatrix[1,1] = np.cos(τ*T)
+    Rmatrix[1,0] = Rmatrix[0,1] =  -1j*np.exp(1j*ϕ0)*np.sin(τ*T)
+    res_ = np.matmul(np.conj(Rmatrix.T), np.matmul(ρ, Rmatrix))
+    # apply the rotation and return
+    return res_
+
+def get_bloch_angles(ρ):
+    Cos_θ = 2*ρ[0,0] - 1
+    Sin_θ = np.sqrt(1-Cos_θ**2) 
+    Sin_ϕ = (ρ[1,0] - ρ[0,1])/(1j*Sin_θ)
+    return Cos_θ,Sin_ϕ
+
+def get_bloch_angles_time(ρ_list):
+    # Calculate the Bloch angles for each time step
+
+    costheta_list = []
+    sinphi_list = []
+    for i in range(0,len(ρ_list)):
+        # mixed state bloch sphere representation. Check page 34 of my notes for this 
+        r = ρ_list[i]
+        Cos_theta_p, Sin_phi_p = get_bloch_angles(r)
+        
+        costheta_list.append(Cos_theta_p)
+        sinphi_list.append(Sin_phi_p)
+        
+    return costheta_list, sinphi_list
+
+def get_free_orbit(ρ0, cosθ0, ϕ0 ,time_range,ti):
+    # calculate the free orbit of a qubit based ond the given einitial conditions
+    rho_free_list = [ρ0]
+    # Clip to avoid occasional floating-point spillover outside [-1, 1].
+    cosθ0_clip = np.clip(np.real(cosθ0), -1.0, 1.0)
+    theta_free_list = [np.arccos(cosθ0_clip)]
+    phi_free_list = [ϕ0]
+    
+    for i in range(1,len(time_range)):
+        # rotate up to time tau
+        τ = time_range[i] 
+        rho_tau = rotate_rho(rho_free_list[0], τ, ti , ϕ0)
+        # get the angles at that tau
+        Cos_theta_p, Sin_phi_p = get_bloch_angles(rho_tau)
+        Cos_theta_p = np.clip(np.real(Cos_theta_p), -1.0, 1.0)
+        Sin_phi_p = np.clip(np.real(Sin_phi_p), -1.0, 1.0)
+        Sin_theta_p = np.sqrt(np.clip(1 - Cos_theta_p**2, 0.0, 1.0))
+        Cos_phi_p = np.sqrt(np.clip(1 - Sin_phi_p**2, 0.0, 1.0))
+        # now properly get the angles        
+        rho_free_list.append(rho_tau)
+        theta_free_list.append(math.atan2(Sin_theta_p, Cos_theta_p))
+        phi_free_list.append(math.atan2(Sin_phi_p, Cos_phi_p))
+        
+    # fix initial value error
+    phi_free_list[0] = phi_free_list[1]
+
+    return rho_free_list, theta_free_list, phi_free_list
+
+def get_euclidean_distance(costheta, sinphi, theta_free_list, phi_free_list):
+    # gets the euclidean distance between the free orbit and the coupled one 
+    # it also returns the magnitude of the bloch vector for the coupled case
+
+    # Now plot the numerical coupled case
+    dd_theta = np.real(np.arccos(costheta))
+    dd_phi = np.real(np.arcsin(sinphi))
+
+    # calculate the equclidean distance between each point of the decoupled and interacting orbits
+    x_free = np.sin(theta_free_list)*np.cos(phi_free_list)
+    y_free = np.sin(theta_free_list)*np.sin(phi_free_list)
+    z_free = np.cos(theta_free_list)
+
+    x_ = np.sin(dd_theta)*np.cos(dd_phi)
+    y_ = np.sin(dd_theta)*sinphi
+    z_ = np.asarray(costheta)
+
+    e_distance = np.real(np.sqrt((x_free-x_)**2 + (y_free-y_)**2 + (z_free-z_)**2))
+    e_distance = e_distance[1:] # the first one is pruned because of inacuracies
+
+    return e_distance
+
+def get_purity(rho_array):
+    # rho array is an nx2x2 array where the n index is the 
+    # reduced density matrix in time 
+    # returns purity as a function in time
+    purity_list = []
+    for i in range(0, np.shape(rho_array)[0]):
+        rr = rho_array[i,:,:]
+        purity_list.append(np.trace(rr.dot(rr)).real)
+        
+    return np.asarray(purity_list)
+
+    
+
+# ------------------------------------------------------------
+#  CREATING HAMILTONIANS AND OPERATORS IN QUTIP
+# ----------------------------------------------------------
+
+def get_qpc_H(op_list, Nsites, Nqpc,jcouple):
+        # create the Hamiltonian for the QPC where Nsites includes the double dot
+    # and Nqpc only has the qpc site
+    ident_tensor = tensor([identity(2)]*(Nsites)) 
+    H = 0*ident_tensor
+
+    for site_j in range(0,Nqpc-1):
+        H += -jcouple[site_j]*(op_list[site_j].dag()*op_list[site_j+1]+
+                                   op_list[site_j+1].dag()*op_list[site_j])
+    return H 
+
+def get_thight_binding_hamiltonian(op_list, Nsites,jcouple, bc="fixed"):
+    # creates the tight binding hamiltonian  from the fermion operators in op_list
+    # and the coupling array jcouple with the chosen boundary conditions
+    # for Nsites lattices sites
+
+    ident_tensor = tensor([identity(2)]*(Nsites)) 
+    H = 0*ident_tensor
+
+    for site_j in range(0,Nsites-1):
+        H += -0.5*jcouple[site_j]*(op_list[site_j].dag()*op_list[site_j+1]+op_list[site_j+1].dag()*op_list[site_j])
+        
+    if bc == "periodic":
+        print("periodic")
+        # operator that acts on the final 
+        # implement periodic boundaries
+        H += -0.5*jcouple[Nsites-1]*(op_list[Nsites-1].dag()*op_list[0]+op_list[0].dag()*op_list[Nsites-1])
+        
+    return H 
+
+
+def get_1p_basis(Nsites):
+    # creates the initial wave function from the init_coefs list
+    # and the one particle basis vectors
+    # create the density matrix from ONE particle basis states
+    # list holding all possible 1-particle states
+    string_list = []
+    basis_list = []
+
+    # MAKE SURE EVERYTHING STAYS SPARSE
+    b1 = basis(2,0)
+    b1.data = data.to(data.CSR, b1.data)    
+    b2 = basis(2,1)
+    b2.data = data.to(data.CSR, b2.data)
+    
+    for site_j in range(0,Nsites):
+        # create emty sites
+        site_vectors = [b1]*Nsites
+        site_string = [0]*Nsites
+        
+        # create an exitation at site j
+        site_vectors[site_j] = b2
+        site_string[site_j] = 1
+        
+        string_list.append(site_string)
+        basis_list.append(tensor(site_vectors))
+
+    return string_list, basis_list
+
+def get_2p_basis(Nsites):
+    #creates a two particle basis for a lattices of size Nsites
+    
+    string_list = [] # to track where we put the particles
+    basis_list = [] # to save the multiparticle basis states
+    for site_i in range(0,Nsites-1):
+        for site_j in range(site_i+1,Nsites):
+            site_string = [0]*Nsites
+            site_vectors = [basis(2, 0)]*Nsites
+            # place a fermion in site 0 and another in j
+            site_vectors[site_i] = basis(2, 1)
+            site_vectors[site_j] = basis(2, 1)
+            # track the placement as a string
+            site_string[site_i] = 1
+            site_string[site_j] = 1
+
+            basis_list.append(tensor(site_vectors))
+            string_list.append(site_string)
+
+    return string_list,basis_list
+
+
+def get_initial_state(init_coefs, basis_set):
+    # creates the initial Psi0 state by combining the lists init_coefs and basis_set
+    # into a normalized qutip ket
+    
+    Psi0 = np.sum([init_coefs[j]*basis_set[j] for j in range(0,len(init_coefs))])
+    Psi0 = Psi0.unit()
+    
+    return Psi0
+
+def create_lindblad_op(Nsites, operator_list ,gamma,collapse_type="number"):
+    # creates the operators necesary for the non-unitrary dynamics i.e
+    # collapse operatos and the operators for the expectation values
+    # collapse_type = "number" or "ladder"
+    collapse_ops = []
+    expect_ops = []
+
+    for site_j in range(0,Nsites):
+        density_op = operator_list[site_j].dag()*operator_list[site_j]
+        expect_ops.append(density_op)
+        
+        if collapse_type=="number":
+            collapse_ops.append(np.sqrt(gamma)*density_op)
+        else: 
+            collapse_ops.append(np.sqrt(gamma)*operator_list[site_j])
+    
+    return collapse_ops, expect_ops
+
+
+# ------------------------------------------------------------------
+# Numpy Perturbation theory and Exact diagonalizaiton
+# ------------------------------------------------------------------
+
+
+def create_hamiltonians(L, T, Bond):
+    # creates the decoupled and interacting hamiltonians 
+    
+    # L_qpc = qpc lattice sites
+    # T = qubit hopping
+    # BOnd = index for bond locatin
+    H_matrix = np.zeros((2*L,2*L))
+    # fill in the dd hopping 
+    d_indices= kth_diag_indices(H_matrix,1)
+    H_matrix[d_indices] = -T
+    
+    # fill in the QPC hopping
+    d_indices= kth_diag_indices(H_matrix,2)
+    H_matrix[d_indices] = -J[0]
+    
+    # when qpc and qubit hop a the same time there is no contribution
+    d_indices= kth_diag_indices(H_matrix,1)
+    odd_inds = (d_indices[0][1::2], d_indices[1][1::2])
+    H_matrix[odd_inds] = 0
+    
+    # save the free hamiltonian for later use
+    Hdeco = H_matrix.copy()
+    
+    # Fill in the interaction at the bond
+    H_matrix[2*Bond,2*(Bond+1)] = H_matrix[2*Bond,2*(Bond+1)]+ Omega
+    
+    # Now the elemets below the diagonal
+    for i in range(0,2*L):
+        for j in range(i + 1, 2*L):
+            H_matrix[j, i] = H_matrix[i, j]
+            Hdeco[j, i] = Hdeco[i, j]
+            
+    return H_matrix, Hdeco
+
+
+def get_bands(Eigen_energies, Eigen_vectors, Minus_indices, Plus_indies):
+    # separates eigenvectors and eigenvalues into plus/minus enegy bands
+    # and then sorts by enegy magnitude
+    
+    # minus band
+    Energies_m = Eigen_energies[Minus_indices]
+    States_m = Eigen_vectors[:,Minus_indices]
+    # sort by magnitude
+    Energies_m, States_m = mag_sort(Energies_m, States_m)
+    
+    # plus band
+    Energies_p = Eigen_energies[Plus_indies]
+    States_p = Eigen_vectors[:,Plus_indies]
+    # sort by magnitude
+    Energies_p, States_p = mag_sort(Energies_p, States_p)
+    
+    return Energies_m, States_m, Energies_p, States_p
+
+
+def kth_diag_indices(a, k):
+    # negative numbers go below the diagonal, 0 is the main diagonal and positive nums go above
+    rows, cols = np.diag_indices_from(a)
+    if k < 0:
+        return rows[-k:], cols[:k]
+    elif k > 0:
+        return rows[:-k], cols[k:]
+    else:
+        return rows, cols
+    
+# Find index of the closest value
+def find_nearest(arr, target):
+    idx = np.abs(arr - target).argmin()
+    return arr[idx], idx
+
+def mag_sort(en_array, vec_array):
+    # sorts the energies and eigenvectors by energy magnitude
+    sort_idx = np.argsort(en_array)
+    en_array = en_array[sort_idx]
+    vec_array = vec_array[:,sort_idx]
+
+    return en_array, vec_array
+    
+
+def xhi(K,P, B):
+    # the matrix elements for perturbation
+    return np.sin(B*P+P)*np.sin(B*K) + np.sin(B*K+K)*np.sin(B*P)
+
+
+def sort_by_projection(energy_list,eigen_list, Proj):
+    # sorts the eigenvectors from numpy diagonalize into bands by their projection onto Proj
+    P_elements = []
+    # separate into bands accordin to their projection
+    for i in range(0,len(energy_list)):
+        # for plus states
+        ev = eigen_list[:,i]
+        ev_proj = np.matmul(Proj,ev)
+        # here we round off to nearest integer only for the separation
+        P_elements.append(round(np.dot(np.conj(ev), ev_proj)))
+        
+    P_elements = np.asarray(P_elements)
+    
+    # the symmetric states will be those with 1
+    p_sort_idx = np.argwhere(P_elements==1)[:,0]
+    
+    # the antisymmetric states will be those with 0
+    m_sort_idx = np.argwhere(P_elements==0)[:,0]
+
+    return m_sort_idx, p_sort_idx
+
+
+def sort_by_overlap_matrix(Energies, Free_eigenvecs ,Eigenvecs):
+    # sort the bands according to their overlap matrix 
+    # calculate the overlaps between the eigenvectors of H0 (Free_eigenvecs) and
+    # the interacting case H=H0+V (Eigenvecs)
+    
+    Sorted_indices = []
+    Over_matrix = np.zeros((len(Energies),len(Energies))) + 0j
+    for i in range(0,len(Energies)):
+        for j in range(0,len(Energies)):
+            overlap = (np.dot(Free_eigenvecs[:,i].conj(), Eigenvecs[:,j]))**2
+            Over_matrix[i,j] = overlap
+        # now in the current ith row grab the j index of the maximum overlap
+        Sorted_indices.append(np.argmax(Over_matrix[i,:]))
+    return Sorted_indices, Over_matrix
+
+# ------------------------------------------------------------------
+# HELPER FUNCS 
+# ------------------------------------------------------------------
+
+def find_nearest_index(array, value):
+    # finds the index of the element closest to value
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+
+    return idx
+    
+
+def get_file_names_on(param_list, route):
+    name_list = os.listdir(route)
+    try:
+        name_list.remove('.DS_Store')
+    except:
+        pass
+    # gets a list of the hdf5 file names with t dependent data depending on the values in param_list
+    for subs in param_list:
+        # getting strings with parameters that we want
+        name_list = list(filter(lambda x: subs in x, name_list))
+
+    return name_list
+
